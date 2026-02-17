@@ -2,6 +2,7 @@ decoder Dsp {
     width = 16
     bit_order = lsb0
     max_units = 2
+    endian = big
 }
 
 clr15   [15:0]=10001100????????
