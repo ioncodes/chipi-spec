@@ -298,13 +298,27 @@ stp           op=0xDB | "stp"
 wai           op=0xCB | "wai"
 xba           op=0xEB | "xba"
 
-dispatch branches { bra_rel, beq_rel, bne_rel, bcc_rel, bcs_rel, bpl_rel, bmi_rel, bvc_rel, bvs_rel }
-dispatch flag_ops { clc, sec, cli, sei, cld, sed, clv }
-dispatch flag_mask { rep_imm, sep_imm }
-dispatch sw_trap { brk_imm, cop_imm }
-dispatch reg_step { inc_a, dec_a, inx, iny, dex, dey }
-dispatch store { sta_idx, sta_sr, sta_dp, sta_idl, sta_abs, sta_abl, sta_idy, sta_idp, sta_isy, sta_dpx, sta_idly, sta_aby, sta_abx, sta_alx, stx_dp, stx_abs, stx_dpy, sty_dp, sty_abs, sty_dpx, stz_dp, stz_dpx, stz_abs, stz_abx }
-dispatch load { lda_idx, lda_sr, lda_dp, lda_idl, lda_imm_m16, lda_imm_m8, lda_abs, lda_abl, lda_idy, lda_idp, lda_isy, lda_dpx, lda_idly, lda_aby, lda_abx, lda_alx, ldx_imm_x16, ldx_imm_x8, ldx_dp, ldx_abs, ldx_dpy, ldx_aby, ldy_imm_x16, ldy_imm_x8, ldy_dp, ldy_abs, ldy_dpx, ldy_abx }
+dispatch branches   { bra_rel, beq_rel, bne_rel, bcc_rel, bcs_rel, bpl_rel, bmi_rel, bvc_rel, bvs_rel }
+dispatch flag_ops   { clc, sec, cli, sei, cld, sed, clv }
+dispatch flag_mask  { rep_imm, sep_imm }
+dispatch sw_trap    { brk_imm, cop_imm }
+dispatch reg_step   { inc_a, dec_a, inx, iny, dex, dey }
+dispatch store      { sta_idx, sta_sr, sta_dp, sta_idl, sta_abs, sta_abl, sta_idy, sta_idp, sta_isy, sta_dpx, sta_idly, sta_aby, sta_abx, sta_alx, stx_dp, stx_abs, stx_dpy, sty_dp, sty_abs, sty_dpx, stz_dp, stz_dpx, stz_abs, stz_abx }
+dispatch load       { lda_idx, lda_sr, lda_dp, lda_idl, lda_imm_m16, lda_imm_m8, lda_abs, lda_abl, lda_idy, lda_idp, lda_isy, lda_dpx, lda_idly, lda_aby, lda_abx, lda_alx, ldx_imm_x16, ldx_imm_x8, ldx_dp, ldx_abs, ldx_dpy, ldx_aby, ldy_imm_x16, ldy_imm_x8, ldy_dp, ldy_abs, ldy_dpx, ldy_abx }
+dispatch alu        { adc_idx, adc_sr, adc_dp, adc_idl, adc_imm_m16, adc_imm_m8, adc_abs, adc_abl, adc_idy, adc_idp, adc_isy, adc_dpx, adc_idly, adc_aby, adc_abx, adc_alx, sbc_idx, sbc_sr, sbc_dp, sbc_idl, sbc_imm_m16, sbc_imm_m8, sbc_abs, sbc_abl, sbc_idy, sbc_idp, sbc_isy, sbc_dpx, sbc_idly, sbc_aby, sbc_abx, sbc_alx, and_idx, and_sr, and_dp, and_idl, and_imm_m16, and_imm_m8, and_abs, and_abl, and_idy, and_idp, and_isy, and_dpx, and_idly, and_aby, and_abx, and_alx, ora_idx, ora_sr, ora_dp, ora_idl, ora_imm_m16, ora_imm_m8, ora_abs, ora_abl, ora_idy, ora_idp, ora_isy, ora_dpx, ora_idly, ora_aby, ora_abx, ora_alx, eor_idx, eor_sr, eor_dp, eor_idl, eor_imm_m16, eor_imm_m8, eor_abs, eor_abl, eor_idy, eor_idp, eor_isy, eor_dpx, eor_idly, eor_aby, eor_abx, eor_alx }
+dispatch compare    { cmp_idx, cmp_sr, cmp_dp, cmp_idl, cmp_imm_m16, cmp_imm_m8, cmp_abs, cmp_abl, cmp_idy, cmp_idp, cmp_isy, cmp_dpx, cmp_idly, cmp_aby, cmp_abx, cmp_alx, cpx_imm_x16, cpx_imm_x8, cpx_dp, cpx_abs, cpy_imm_x16, cpy_imm_x8, cpy_dp, cpy_abs }
+dispatch bit_test   { bit_dp, bit_abs, bit_dpx, bit_abx, bit_imm_m16, bit_imm_m8 }
+dispatch shift      { asl_dp, asl_a, asl_abs, asl_dpx, asl_abx, lsr_dp, lsr_a, lsr_abs, lsr_dpx, lsr_abx, rol_dp, rol_a, rol_abs, rol_dpx, rol_abx, ror_dp, ror_a, ror_abs, ror_dpx, ror_abx }
+dispatch mem_step   { inc_dp, inc_abs, inc_dpx, inc_abx, dec_dp, dec_abs, dec_dpx, dec_abx }
+dispatch bit_modify { tsb_dp, tsb_abs, trb_dp, trb_abs }
+dispatch transfer   { tax, txa, tay, tya, tsx, txs, txy, tyx, tcs, tsc, tcd, tdc }
+dispatch push       { pha, phx, phy, php, phb, phd, phk, pea_abs, pei_idp, per_rell }
+dispatch pull       { pla, plx, ply, plp, plb, pld }
+dispatch jump       { jmp_abs, jmp_abl, jmp_ind, jmp_iax, jml_ial }
+dispatch call       { jsr_abs, jsl_abl, jsr_iax }
+dispatch ret        { rts, rtl, rti }
+dispatch block_move { mvn_bm, mvp_bm }
+dispatch halt       { stp, wai }
 
 # address mode tags
 am_dp   { lda_dp, ldx_dp, ldy_dp, sta_dp, stx_dp, sty_dp, stz_dp, adc_dp, sbc_dp, and_dp, ora_dp, eor_dp, cmp_dp, cpx_dp, cpy_dp, bit_dp, inc_dp, dec_dp, asl_dp, lsr_dp, rol_dp, ror_dp, tsb_dp, trb_dp }
