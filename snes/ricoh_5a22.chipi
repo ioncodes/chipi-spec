@@ -313,7 +313,7 @@ dispatch mem_step   { inc_dp, inc_abs, inc_dpx, inc_abx, dec_dp, dec_abs, dec_dp
 dispatch bit_modify { tsb_dp, tsb_abs, trb_dp, trb_abs }
 dispatch transfer   { tax, txa, tay, tya, tsx, txs, txy, tyx, tcs, tsc, tcd, tdc }
 dispatch push       { pha, phx, phy, php, phb, phd, phk, pea_abs, pei_idp, per_rell }
-dispatch pull       { pla, plx, ply, plp, plb, pld }
+dispatch pop        { pla, plx, ply, plp, plb, pld }
 dispatch jump       { jmp_abs, jmp_abl, jmp_ind, jmp_iax, jml_ial }
 dispatch call       { jsr_abs, jsl_abl, jsr_iax }
 dispatch ret        { rts, rtl, rti }
