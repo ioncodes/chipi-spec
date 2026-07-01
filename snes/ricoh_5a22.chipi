@@ -298,7 +298,7 @@ stp           op=0xDB | "stp"
 wai           op=0xCB | "wai"
 xba           op=0xEB | "xba"
 
-dispatch branches   { bra_rel, beq_rel, bne_rel, bcc_rel, bcs_rel, bpl_rel, bmi_rel, bvc_rel, bvs_rel }
+dispatch branches   { bra_rel, beq_rel, bne_rel, bcc_rel, bcs_rel, bpl_rel, bmi_rel, bvc_rel, bvs_rel, brl_rell }
 dispatch flag_ops   { clc, sec, cli, sei, cld, sed, clv }
 dispatch flag_mask  { rep_imm, sep_imm }
 dispatch sw_trap    { brk_imm, cop_imm }
