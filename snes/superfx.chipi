@@ -1,0 +1,169 @@
+decoder SuperFx {
+    width     = 8
+    bit_order = lsb0
+    endian    = little
+    mode alt1: bool = 0   # SFR.ALT1, set by ALT1/ALT3
+    mode alt2: bool = 0   # SFR.ALT2, set by ALT2/ALT3
+    mode b:    bool = 0   # SFR.B, set by WITH: $1n/$Bn become MOVE/MOVES
+}
+
+selector op [0:7]
+
+operand reg4   = u4 { display("r{}") }   # register index in the low nibble
+operand imm4   = u4 { display(dec) }     # ALT2/ALT3 turn the same nibble into a 0..15 immediate
+operand byte8  = u8  fetch(8)
+operand word16 = u16 fetch(16)
+operand rel8   = i8  fetch(8)
+
+# ---------------------------------------------------------------- GSU control
+
+stop  op=0x00 | "stop"
+nop   op=0x01 | "nop"
+cache op=0x02 | "cache"
+
+# ---------------------------------------------------------------- shifts and rotates
+
+lsr  op=0x03 | "lsr"
+rol  op=0x04 | "rol"
+asr  alt1=0 op=0x96 | "asr"
+div2 alt1=1 op=0x96 | "div2"
+ror  op=0x97 | "ror"
+
+# ---------------------------------------------------------------- branches
+
+bra op=0x05 disp:rel8 | "bra ${disp:rel}"
+bge op=0x06 disp:rel8 | "bge ${disp:rel}"   # $06 branches on S == OV; bsnes/ares/MAME print these
+blt op=0x07 disp:rel8 | "blt ${disp:rel}"   # two the other way round, following book2.pdf
+bne op=0x08 disp:rel8 | "bne ${disp:rel}"
+beq op=0x09 disp:rel8 | "beq ${disp:rel}"
+bpl op=0x0A disp:rel8 | "bpl ${disp:rel}"
+bmi op=0x0B disp:rel8 | "bmi ${disp:rel}"
+bcc op=0x0C disp:rel8 | "bcc ${disp:rel}"
+bcs op=0x0D disp:rel8 | "bcs ${disp:rel}"
+bvc op=0x0E disp:rel8 | "bvc ${disp:rel}"
+bvs op=0x0F disp:rel8 | "bvs ${disp:rel}"
+
+# ---------------------------------------------------------------- register prefixes
+
+to    b=0 [7:4]=0x1 n:reg4[3:0] | "to {n}"
+move  b=1 [7:4]=0x1 n:reg4[3:0] | "move {n}"
+with      [7:4]=0x2 n:reg4[3:0] | "with {n}"
+from  b=0 [7:4]=0xB n:reg4[3:0] | "from {n}"
+moves b=1 [7:4]=0xB n:reg4[3:0] | "moves {n}"   # n is the source here, Dreg comes from the WITH
+
+alt1 op=0x3D | "alt1"
+alt2 op=0x3E | "alt2"
+alt3 op=0x3F | "alt3"
+
+# ---------------------------------------------------------------- Game Pak RAM
+
+stw alt1=0 [7:4]=0x3 n:reg4[3:0] | "stw ({n})"
+stb alt1=1 [7:4]=0x3 n:reg4[3:0] | "stb ({n})"
+ldw alt1=0 [7:4]=0x4 n:reg4[3:0] | "ldw ({n})"
+ldb alt1=1 [7:4]=0x4 n:reg4[3:0] | "ldb ({n})"
+sbk op=0x90 | "sbk"
+
+lm  alt1=1        [7:4]=0xF n:reg4[3:0] addr:word16 | "lm {n}, (${addr:04x})"
+sm  alt1=0 alt2=1 [7:4]=0xF n:reg4[3:0] addr:word16 | "sm (${addr:04x}), {n}"
+lms alt1=1        [7:4]=0xA n:reg4[3:0] kk:byte8    | "lms {n}, (${kk:02x}*2)"   # RAM addr is kk*2
+sms alt1=0 alt2=1 [7:4]=0xA n:reg4[3:0] kk:byte8    | "sms (${kk:02x}*2), {n}"
+
+# ---------------------------------------------------------------- immediates
+
+ibt alt1=0 alt2=0 [7:4]=0xA n:reg4[3:0] imm:byte8  | "ibt {n}, #${imm:02x}"
+iwt alt1=0 alt2=0 [7:4]=0xF n:reg4[3:0] imm:word16 | "iwt {n}, #${imm:04x}"
+
+# ---------------------------------------------------------------- Game Pak ROM
+
+getb  alt1=0 alt2=0 op=0xEF | "getb"
+getbh alt1=1 alt2=0 op=0xEF | "getbh"
+getbl alt1=0 alt2=1 op=0xEF | "getbl"
+getbs alt1=1 alt2=1 op=0xEF | "getbs"
+getc  alt2=0        op=0xDF | "getc"
+ramb  alt1=0 alt2=1 op=0xDF | "ramb"
+romb  alt1=1 alt2=1 op=0xDF | "romb"
+
+# ---------------------------------------------------------------- bitmap
+
+plot  alt1=0 op=0x4C | "plot"
+rpix  alt1=1 op=0x4C | "rpix"
+color alt1=0 op=0x4E | "color"
+cmode alt1=1 op=0x4E | "cmode"
+
+# ---------------------------------------------------------------- arithmetic and logic
+
+add.reg alt1=0 alt2=0 [7:4]=0x5 n:reg4[3:0] | "add {n}"
+adc.reg alt1=1 alt2=0 [7:4]=0x5 n:reg4[3:0] | "adc {n}"
+add.imm alt1=0 alt2=1 [7:4]=0x5 n:imm4[3:0] | "add #{n}"
+adc.imm alt1=1 alt2=1 [7:4]=0x5 n:imm4[3:0] | "adc #{n}"
+
+sub.reg alt1=0 alt2=0 [7:4]=0x6 n:reg4[3:0] | "sub {n}"
+sbc.reg alt1=1 alt2=0 [7:4]=0x6 n:reg4[3:0] | "sbc {n}"
+sub.imm alt1=0 alt2=1 [7:4]=0x6 n:imm4[3:0] | "sub #{n}"
+cmp.reg alt1=1 alt2=1 [7:4]=0x6 n:reg4[3:0] | "cmp {n}"
+
+merge op=0x70 | "merge"
+and.reg alt1=0 alt2=0 [7:4]=0x7 n:reg4[3:0] | "and {n}"
+bic.reg alt1=1 alt2=0 [7:4]=0x7 n:reg4[3:0] | "bic {n}"
+and.imm alt1=0 alt2=1 [7:4]=0x7 n:imm4[3:0] | "and #{n}"
+bic.imm alt1=1 alt2=1 [7:4]=0x7 n:imm4[3:0] | "bic #{n}"
+
+mult.reg  alt1=0 alt2=0 [7:4]=0x8 n:reg4[3:0] | "mult {n}"
+umult.reg alt1=1 alt2=0 [7:4]=0x8 n:reg4[3:0] | "umult {n}"
+mult.imm  alt1=0 alt2=1 [7:4]=0x8 n:imm4[3:0] | "mult #{n}"
+umult.imm alt1=1 alt2=1 [7:4]=0x8 n:imm4[3:0] | "umult #{n}"
+
+fmult alt1=0 op=0x9F | "fmult"
+lmult alt1=1 op=0x9F | "lmult"
+
+hib op=0xC0 | "hib"
+or.reg  alt1=0 alt2=0 [7:4]=0xC n:reg4[3:0] | "or {n}"
+xor.reg alt1=1 alt2=0 [7:4]=0xC n:reg4[3:0] | "xor {n}"
+or.imm  alt1=0 alt2=1 [7:4]=0xC n:imm4[3:0] | "or #{n}"
+xor.imm alt1=1 alt2=1 [7:4]=0xC n:imm4[3:0] | "xor #{n}"
+
+not op=0x4F | "not"
+
+inc [7:4]=0xD n:reg4[3:0] | "inc {n}"
+dec [7:4]=0xE n:reg4[3:0] | "dec {n}"
+
+# ---------------------------------------------------------------- byte moves
+
+swap op=0x4D | "swap"
+sex  op=0x95 | "sex"
+lob  op=0x9E | "lob"
+
+# ---------------------------------------------------------------- jumps and loops
+
+for n in 8..14 {
+    jmp_r{n}  alt1=0 op = 0x90 + n | "jmp r{n}"
+    ljmp_r{n} alt1=1 op = 0x90 + n | "ljmp r{n}"
+}
+
+for n in 1..5 {
+    link_{n} op = 0x90 + n | "link #{n}"
+}
+
+loop op=0x3C | "loop"
+
+# ----------------------------------------------------------------
+
+dispatch prefix_alt { alt1, alt2, alt3 }
+dispatch prefix_reg { to, with, from }
+dispatch move_reg   { move, moves }
+dispatch alu        { add.*, adc.*, sub.*, sbc.*, cmp.*, and.*, bic.*, or.*, xor.*, not }
+dispatch muldiv     { mult.*, umult.*, fmult, lmult, div2 }
+dispatch shift      { lsr, rol, asr, ror }
+dispatch reg_step   { inc, dec }
+dispatch byte_ops   { swap, sex, lob, hib, merge }
+dispatch load_ram   { ldw, ldb, lm, lms }
+dispatch store_ram  { stw, stb, sm, sms, sbk }
+dispatch load_imm   { ibt, iwt }
+dispatch rom_read   { getb, getbh, getbl, getbs, getc }
+dispatch bank       { ramb, romb }
+dispatch bitmap     { plot, rpix, color, cmode }
+dispatch branches   { bra, bge, blt, bne, beq, bpl, bmi, bcc, bcs, bvc, bvs }
+dispatch jump       { jmp_r8, jmp_r9, jmp_r10, jmp_r11, jmp_r12, jmp_r13, ljmp_r8, ljmp_r9, ljmp_r10, ljmp_r11, ljmp_r12, ljmp_r13 }
+dispatch call       { link_1, link_2, link_3, link_4 }
+dispatch loop_ctl   { loop }
+dispatch halt       { stop }
