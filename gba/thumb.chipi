@@ -1,0 +1,259 @@
+decoder Thumb {
+    width     = 16
+    bit_order = lsb0
+    endian    = little
+}
+
+selector op [15:13]
+
+operand low_reg = u3 { display("r{}") }
+operand reg = u4 { display("r{}") }
+operand word_offset8 = u32 { zero_extend(8), shift_left(2), display(hex) }
+operand word_offset7 = u32 { zero_extend(7), shift_left(2), display(hex) }
+operand branch8 = i32 { sign_extend(8), shift_left(1), display(signed_hex) }
+operand branch11 = i32 { sign_extend(11), shift_left(1), display(signed_hex) }
+operand link_high = i32 { sign_extend(11), shift_left(12), display(signed_hex) }
+operand link_low = u32 { zero_extend(11), shift_left(1), display(hex) }
+operand cc = u4 {
+    display(names {
+        0x0 => "eq", 0x1 => "ne", 0x2 => "cs", 0x3 => "cc",
+        0x4 => "mi", 0x5 => "pl", 0x6 => "vs", 0x7 => "vc",
+        0x8 => "hi", 0x9 => "ls", 0xA => "ge", 0xB => "lt",
+        0xC => "gt", 0xD => "le", _ => hex
+    })
+}
+
+
+# Format 1: move shifted register
+lsl.shift_imm op=0b000 [12:11]=0 shift_imm:u5[10:6] rs:low_reg[5:3] rd:low_reg[2:0]
+              | "lsls {rd}, {rs}, #{shift_imm:d}"
+
+lsr.shift_imm op=0b000 [12:11]=1 shift_imm:u5[10:6] rs:low_reg[5:3] rd:low_reg[2:0]
+              | "lsrs {rd}, {rs}, #{shift_imm == 0?32:{shift_imm:d}}"
+
+asr.shift_imm op=0b000 [12:11]=2 shift_imm:u5[10:6] rs:low_reg[5:3] rd:low_reg[2:0]
+              | "asrs {rd}, {rs}, #{shift_imm == 0?32:{shift_imm:d}}"
+
+# Format 2: add/subtract
+add.reg3 op=0b000 [12:11]=0b11 [10]=0 [9]=0 rn:low_reg[8:6] rs:low_reg[5:3] rd:low_reg[2:0]
+         | "adds {rd}, {rs}, {rn}"
+
+add.imm3 op=0b000 [12:11]=0b11 [10]=1 [9]=0 imm3:u3[8:6] rs:low_reg[5:3] rd:low_reg[2:0]
+         | "adds {rd}, {rs}, #{imm3}"
+
+sub.reg3 op=0b000 [12:11]=0b11 [10]=0 [9]=1 rn:low_reg[8:6] rs:low_reg[5:3] rd:low_reg[2:0]
+         | "subs {rd}, {rs}, {rn}"
+
+sub.imm3 op=0b000 [12:11]=0b11 [10]=1 [9]=1 imm3:u3[8:6] rs:low_reg[5:3] rd:low_reg[2:0]
+         | "subs {rd}, {rs}, #{imm3}"
+
+# Format 3: move/compare/add/subtract immediate
+mov.imm8 op=0b001 [12:11]=0 dest8:low_reg[10:8] imm8:u8[7:0]
+         | "movs {dest8}, #{imm8}"
+
+cmp.imm8 op=0b001 [12:11]=1 dest8:low_reg[10:8] imm8:u8[7:0]
+         | "cmp {dest8}, #{imm8}"
+
+add.imm8 op=0b001 [12:11]=2 dest8:low_reg[10:8] imm8:u8[7:0]
+         | "adds {dest8}, #{imm8}"
+
+sub.imm8 op=0b001 [12:11]=3 dest8:low_reg[10:8] imm8:u8[7:0]
+         | "subs {dest8}, #{imm8}"
+
+# Format 4: ALU operations
+and.reg op=0b010 [12:10]=0b000 [9:6]=0x0 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "ands {rd}, {rs}"
+
+eor.reg op=0b010 [12:10]=0b000 [9:6]=0x1 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "eors {rd}, {rs}"
+
+lsl.reg op=0b010 [12:10]=0b000 [9:6]=0x2 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "lsls {rd}, {rs}"
+
+lsr.reg op=0b010 [12:10]=0b000 [9:6]=0x3 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "lsrs {rd}, {rs}"
+
+asr.reg op=0b010 [12:10]=0b000 [9:6]=0x4 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "asrs {rd}, {rs}"
+
+adc.reg op=0b010 [12:10]=0b000 [9:6]=0x5 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "adcs {rd}, {rs}"
+
+sbc.reg op=0b010 [12:10]=0b000 [9:6]=0x6 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "sbcs {rd}, {rs}"
+
+ror.reg op=0b010 [12:10]=0b000 [9:6]=0x7 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "rors {rd}, {rs}"
+
+tst.reg op=0b010 [12:10]=0b000 [9:6]=0x8 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "tst {rd}, {rs}"
+
+neg.reg op=0b010 [12:10]=0b000 [9:6]=0x9 rs:low_reg[5:3] rd:low_reg[2:0]
+        | "negs {rd}, {rs}"
+
+cmp.reg op=0b010 [12:10]=0b000 [9:6]=0xA rs:low_reg[5:3] rd:low_reg[2:0]
+        | "cmp {rd}, {rs}"
+
+cmn.reg op=0b010 [12:10]=0b000 [9:6]=0xB rs:low_reg[5:3] rd:low_reg[2:0]
+        | "cmn {rd}, {rs}"
+
+orr.reg op=0b010 [12:10]=0b000 [9:6]=0xC rs:low_reg[5:3] rd:low_reg[2:0]
+        | "orrs {rd}, {rs}"
+
+mul.reg op=0b010 [12:10]=0b000 [9:6]=0xD rs:low_reg[5:3] rd:low_reg[2:0]
+        | "muls {rd}, {rs}"
+
+bic.reg op=0b010 [12:10]=0b000 [9:6]=0xE rs:low_reg[5:3] rd:low_reg[2:0]
+        | "bics {rd}, {rs}"
+
+mvn.reg op=0b010 [12:10]=0b000 [9:6]=0xF rs:low_reg[5:3] rd:low_reg[2:0]
+        | "mvns {rd}, {rs}"
+
+# Format 5: Hi register operations/branch exchange
+add.high op=0b010 [12:10]=0b001 [9:8]=0 hd:bool[7] high_src:reg[6:3] rd:low_reg[2:0]
+         when hd || high_src >= 8
+         high_dest:reg = rd + (hd << 3)
+         | "add {high_dest}, {high_src}"
+
+cmp.high op=0b010 [12:10]=0b001 [9:8]=1 hd:bool[7] high_src:reg[6:3] rd:low_reg[2:0]
+         when hd || high_src >= 8
+         high_dest:reg = rd + (hd << 3)
+         | "cmp {high_dest}, {high_src}"
+
+mov.high op=0b010 [12:10]=0b001 [9:8]=2 hd:bool[7] high_src:reg[6:3] rd:low_reg[2:0]
+         when hd || high_src >= 8
+         high_dest:reg = rd + (hd << 3)
+         | "mov {high_dest}, {high_src}"
+
+bx op=0b010 [12:7]=0b001110 high_src:reg[6:3] [2:0]=0
+   | "bx {high_src}"
+
+# Format 6: PC-relative load
+ldr.literal op=0b010 [12:11]=0b01 dest8:low_reg[10:8] scaled_offset:word_offset8[7:0]
+            | "ldr {dest8}, [pc, #{scaled_offset}]"
+
+# Format 7: load/store with register offset
+str.reg_offset op=0b010 [12]=1 [11:9]=0 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+               | "str {rd}, [{rb}, {ro}]"
+
+strb.reg_offset op=0b010 [12]=1 [11:9]=2 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+                | "strb {rd}, [{rb}, {ro}]"
+
+ldr.reg_offset op=0b010 [12]=1 [11:9]=4 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+               | "ldr {rd}, [{rb}, {ro}]"
+
+ldrb.reg_offset op=0b010 [12]=1 [11:9]=6 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+                | "ldrb {rd}, [{rb}, {ro}]"
+
+# Format 8: load/store sign-extended byte/halfword
+strh.reg_offset op=0b010 [12]=1 [11:9]=1 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+                | "strh {rd}, [{rb}, {ro}]"
+
+ldrsb.reg_offset op=0b010 [12]=1 [11:9]=3 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+                 | "ldrsb {rd}, [{rb}, {ro}]"
+
+ldrh.reg_offset op=0b010 [12]=1 [11:9]=5 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+                | "ldrh {rd}, [{rb}, {ro}]"
+
+ldrsh.reg_offset op=0b010 [12]=1 [11:9]=7 ro:low_reg[8:6] rb:low_reg[5:3] rd:low_reg[2:0]
+                 | "ldrsh {rd}, [{rb}, {ro}]"
+
+# Format 9: load/store with immediate offset
+str.word_imm op=0b011 [12:11]=0 off5:u5[10:6] rb:low_reg[5:3] rd:low_reg[2:0]
+             word_offset:u32 = off5 << 2
+             | "str {rd}, [{rb}, #{word_offset}]"
+
+ldr.word_imm op=0b011 [12:11]=1 off5:u5[10:6] rb:low_reg[5:3] rd:low_reg[2:0]
+             word_offset:u32 = off5 << 2
+             | "ldr {rd}, [{rb}, #{word_offset}]"
+
+strb.byte_imm op=0b011 [12:11]=2 off5:u5[10:6] rb:low_reg[5:3] rd:low_reg[2:0]
+              | "strb {rd}, [{rb}, #{off5}]"
+
+ldrb.byte_imm op=0b011 [12:11]=3 off5:u5[10:6] rb:low_reg[5:3] rd:low_reg[2:0]
+              | "ldrb {rd}, [{rb}, #{off5}]"
+
+# Format 10: load/store halfword
+strh.half_imm op=0b100 [12]=0 [11]=0 off5:u5[10:6] rb:low_reg[5:3] rd:low_reg[2:0]
+              half_offset:u32 = off5 << 1
+              | "strh {rd}, [{rb}, #{half_offset}]"
+
+ldrh.half_imm op=0b100 [12]=0 [11]=1 off5:u5[10:6] rb:low_reg[5:3] rd:low_reg[2:0]
+              half_offset:u32 = off5 << 1
+              | "ldrh {rd}, [{rb}, #{half_offset}]"
+
+# Format 11: SP-relative load/store
+str.sp op=0b100 [12]=1 [11]=0 dest8:low_reg[10:8] scaled_offset:word_offset8[7:0]
+       | "str {dest8}, [sp, #{scaled_offset}]"
+
+ldr.sp op=0b100 [12]=1 [11]=1 dest8:low_reg[10:8] scaled_offset:word_offset8[7:0]
+       | "ldr {dest8}, [sp, #{scaled_offset}]"
+
+# Format 12: load address
+add.pc op=0b101 [12]=0 [11]=0 dest8:low_reg[10:8] scaled_offset:word_offset8[7:0]
+       | "add {dest8}, pc, #{scaled_offset}"
+
+add.sp op=0b101 [12]=0 [11]=1 dest8:low_reg[10:8] scaled_offset:word_offset8[7:0]
+       | "add {dest8}, sp, #{scaled_offset}"
+
+# Format 13: add offset to Stack Pointer
+add.sp_adjust op=0b101 [12:8]=0b10000 [7]=0 stack_offset:word_offset7[6:0]
+              | "add sp, #{stack_offset}"
+
+sub.sp_adjust op=0b101 [12:8]=0b10000 [7]=1 stack_offset:word_offset7[6:0]
+              | "sub sp, #{stack_offset}"
+
+# Format 14: push/pop registers
+push op=0b101 [12]=1 [11]=0 [10:9]=0b10 extra:bool[8] list:u8[7:0]
+     | "push \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}{extra?{list?, }lr}\\}"
+
+pop op=0b101 [12]=1 [11]=1 [10:9]=0b10 extra:bool[8] list:u8[7:0]
+    | "pop \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}{extra?{list?, }pc}\\}"
+
+# Format 15: multiple load/store
+stmia op=0b110 [12]=0 [11]=0 base:low_reg[10:8] list:u8[7:0]
+      | "stmia {base}!, \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}\\}"
+
+ldmia op=0b110 [12]=0 [11]=1 base:low_reg[10:8] list:u8[7:0]
+      | "ldmia {base}!, \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}\\}"
+
+# Format 16: conditional branch
+b.cond op=0b110 [12]=1 cond:cc[11:8] cond_offset:branch8[7:0]
+       when cond < 0xE
+       | "b{cond} {cond_offset}"
+
+# Format 17: software interrupt
+swi op=0b110 [12:8]=0b11111 comment:u8[7:0]
+    | "swi #{comment}"
+
+# Format 18: unconditional branch
+b.uncond op=0b111 [12:11]=0b00 offset:branch11[10:0]
+         | "b {offset}"
+
+# Format 19: long branch with link
+blh op=0b111 [12:11]=0b10 prefix:link_high[10:0]
+    | "blh {prefix}"
+
+bll op=0b111 [12:11]=0b11 suffix:link_low[10:0]
+    | "bll lr, #{suffix}"
+
+
+dispatch shift_immediate { lsl.shift_imm, lsr.shift_imm, asr.shift_imm }
+dispatch add_subtract { add.reg3, sub.reg3, add.imm3, sub.imm3 }
+dispatch immediate { mov.imm8, cmp.imm8, add.imm8, sub.imm8 }
+dispatch alu {
+    and.reg, eor.reg, lsl.reg, lsr.reg, asr.reg, adc.reg, sbc.reg, ror.reg,
+    tst.reg, neg.reg, cmp.reg, cmn.reg, orr.reg, mul.reg, bic.reg, mvn.reg
+}
+dispatch high_register { add.high, cmp.high, mov.high }
+dispatch register_transfer {
+    str.reg_offset, strh.reg_offset, strb.reg_offset, ldrsb.reg_offset,
+    ldr.reg_offset, ldrh.reg_offset, ldrb.reg_offset, ldrsh.reg_offset
+}
+dispatch immediate_transfer {
+    str.word_imm, ldr.word_imm, strb.byte_imm, ldrb.byte_imm,
+    strh.half_imm, ldrh.half_imm, str.sp, ldr.sp, ldr.literal
+}
+dispatch address { add.pc, add.sp, add.sp_adjust, sub.sp_adjust }
+dispatch multiple_transfer { push, pop, stmia, ldmia }
+dispatch branch { b.*, bx, blh, bll }

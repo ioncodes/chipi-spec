@@ -1,0 +1,509 @@
+decoder ARM {
+    width     = 32
+    bit_order = lsb0
+    endian    = little
+}
+
+selector op [27:25]
+
+operand reg = u4 { display("r{}") }
+operand shift_amount = u8 { display(dec) }
+operand branch_offset = i32 { sign_extend(24), shift_left(2), display(signed_hex) }
+operand psr_name = u1 { display(names { 0 => "cpsr", 1 => "spsr", _ => hex }) }
+operand cc = u4 {
+    display(names {
+        0x0 => "eq", 0x1 => "ne", 0x2 => "cs", 0x3 => "cc",
+        0x4 => "mi", 0x5 => "pl", 0x6 => "vs", 0x7 => "vc",
+        0x8 => "hi", 0x9 => "ls", 0xA => "ge", 0xB => "lt",
+        0xC => "gt", 0xD => "le", 0xE => "", _ => hex
+    })
+}
+operand shift_kind = u2 {
+    display(names {
+        0 => "lsl", 1 => "lsr", 2 => "asr", 3 => "ror", _ => hex 
+    })
+}
+
+
+# Branch and Exchange (BX)
+bx op=0b000 cond:cc[31:28] [24:4]=0b1_0010_1111_1111_1111_0001 rm:reg[3:0]
+   when cond != 0xF
+   | "bx{cond} {rm}"
+
+# Branch and Branch with Link (B, BL)
+b op=0b101 cond:cc[31:28] link:bool[24] offset:branch_offset[23:0]
+  when cond != 0xF
+  | "b{link?l}{cond} {offset}"
+
+# PSR Transfer (MRS, MSR)
+mrs op=0b000 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:16]=0b001111 rd:reg[15:12] [11:0]=0
+    when cond != 0xF && rd != 15
+    | "mrs{cond} {rd}, {psr}"
+
+msr.psr_reg op=0b000 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 mask:u4[19:16] [15:12]=0b1111 [11:4]=0 rm:reg[3:0]
+            when cond != 0xF && mask != 0 && rm != 15
+            | "msr{cond} {psr}_{mask & 8?f}{mask & 4?s}{mask & 2?x}{mask & 1?c}, {rm}"
+
+msr.psr_imm op=0b001 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 mask:u4[19:16] [15:12]=0b1111 rotate:u4[11:8] imm8:u8[7:0]
+            when cond != 0xF && mask != 0
+            imm:u32 = rotate_right(imm8, rotate * 2, 32)
+            | "msr{cond} {psr}_{mask & 8?f}{mask & 4?s}{mask & 2?x}{mask & 1?c}, #{imm}"
+
+# Multiply and Multiply-Accumulate (MUL, MLA)
+multiply op=0b000 cond:cc[31:28] [24:22]=0b000 a:bool[21] s:bool[20] dest:reg[19:16] acc:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
+         when cond != 0xF && dest < 15 && acc < 15 && rs < 15 && rm < 15 && dest != rm && (a || acc == 0)
+         | "{a?mla:mul}{cond}{s?s} {dest}, {rm}, {rs}{a?, {acc}}"
+
+
+# Multiply Long and Multiply-Accumulate Long (MULL,MLAL)
+umull op=0b000 cond:cc[31:28] [24:21]=0b0100 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
+      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      | "umull{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
+
+umlal op=0b000 cond:cc[31:28] [24:21]=0b0101 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
+      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      | "umlal{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
+
+smull op=0b000 cond:cc[31:28] [24:21]=0b0110 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
+      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      | "smull{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
+
+smlal op=0b000 cond:cc[31:28] [24:21]=0b0111 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
+      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      | "smlal{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
+
+# Data Processing
+form DataImmediate {
+    cond:cc[31:28]
+    s:bool[20]
+    rn:reg[19:16]
+    rd:reg[15:12]
+    rotate:u4[11:8]
+    imm8:u8[7:0]
+}
+
+form DataShiftImmediate {
+    cond:cc[31:28]
+    s:bool[20]
+    rn:reg[19:16]
+    rd:reg[15:12]
+    shift_imm:u5[11:7]
+    shift:shift_kind[6:5]
+    rm:reg[3:0]
+}
+
+form DataShiftRegister {
+    cond:cc[31:28]
+    s:bool[20]
+    rn:reg[19:16]
+    rd:reg[15:12]
+    rs:reg[11:8]
+    shift:shift_kind[6:5]
+    rm:reg[3:0]
+}
+
+and.imm op=0b001 [24:21]=0b0000 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "and{cond}{s?s} {rd}, {rn}, #{imm}"
+
+and.reg_imm op=0b000 [24:21]=0b0000 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "and{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "and{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "and{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+and.reg_reg op=0b000 [24:21]=0b0000 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "and{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+eor.imm op=0b001 [24:21]=0b0001 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "eor{cond}{s?s} {rd}, {rn}, #{imm}"
+
+eor.reg_imm op=0b000 [24:21]=0b0001 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "eor{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "eor{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "eor{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+eor.reg_reg op=0b000 [24:21]=0b0001 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "eor{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+sub.imm op=0b001 [24:21]=0b0010 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "sub{cond}{s?s} {rd}, {rn}, #{imm}"
+
+sub.reg_imm op=0b000 [24:21]=0b0010 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "sub{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "sub{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "sub{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+sub.reg_reg op=0b000 [24:21]=0b0010 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "sub{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+rsb.imm op=0b001 [24:21]=0b0011 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "rsb{cond}{s?s} {rd}, {rn}, #{imm}"
+
+rsb.reg_imm op=0b000 [24:21]=0b0011 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "rsb{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "rsb{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "rsb{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+rsb.reg_reg op=0b000 [24:21]=0b0011 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "rsb{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+add.imm op=0b001 [24:21]=0b0100 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "add{cond}{s?s} {rd}, {rn}, #{imm}"
+
+add.reg_imm op=0b000 [24:21]=0b0100 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "add{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "add{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "add{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+add.reg_reg op=0b000 [24:21]=0b0100 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "add{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+adc.imm op=0b001 [24:21]=0b0101 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "adc{cond}{s?s} {rd}, {rn}, #{imm}"
+
+adc.reg_imm op=0b000 [24:21]=0b0101 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "adc{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "adc{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "adc{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+adc.reg_reg op=0b000 [24:21]=0b0101 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "adc{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+sbc.imm op=0b001 [24:21]=0b0110 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "sbc{cond}{s?s} {rd}, {rn}, #{imm}"
+
+sbc.reg_imm op=0b000 [24:21]=0b0110 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "sbc{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "sbc{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "sbc{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+sbc.reg_reg op=0b000 [24:21]=0b0110 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "sbc{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+rsc.imm op=0b001 [24:21]=0b0111 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "rsc{cond}{s?s} {rd}, {rn}, #{imm}"
+
+rsc.reg_imm op=0b000 [24:21]=0b0111 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "rsc{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "rsc{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "rsc{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+rsc.reg_reg op=0b000 [24:21]=0b0111 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "rsc{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+tst.imm op=0b001 [24:21]=0b1000 uses DataImmediate
+        when cond != 0xF && s
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "tst{cond} {rn}, #{imm}"
+
+tst.reg_imm op=0b000 [24:21]=0b1000 [4]=0 uses DataShiftImmediate
+            when cond != 0xF && s
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "tst{cond} {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "tst{cond} {rn}, {rm}, rrx"
+            | "tst{cond} {rn}, {rm}, {shift} #{amount}"
+
+tst.reg_reg op=0b000 [24:21]=0b1000 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF && s
+            | "tst{cond} {rn}, {rm}, {shift} {rs}"
+
+teq.imm op=0b001 [24:21]=0b1001 uses DataImmediate
+        when cond != 0xF && s
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "teq{cond} {rn}, #{imm}"
+
+teq.reg_imm op=0b000 [24:21]=0b1001 [4]=0 uses DataShiftImmediate
+            when cond != 0xF && s
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "teq{cond} {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "teq{cond} {rn}, {rm}, rrx"
+            | "teq{cond} {rn}, {rm}, {shift} #{amount}"
+
+teq.reg_reg op=0b000 [24:21]=0b1001 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF && s
+            | "teq{cond} {rn}, {rm}, {shift} {rs}"
+
+cmp.imm op=0b001 [24:21]=0b1010 uses DataImmediate
+        when cond != 0xF && s
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "cmp{cond} {rn}, #{imm}"
+
+cmp.reg_imm op=0b000 [24:21]=0b1010 [4]=0 uses DataShiftImmediate
+            when cond != 0xF && s
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "cmp{cond} {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "cmp{cond} {rn}, {rm}, rrx"
+            | "cmp{cond} {rn}, {rm}, {shift} #{amount}"
+
+cmp.reg_reg op=0b000 [24:21]=0b1010 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF && s
+            | "cmp{cond} {rn}, {rm}, {shift} {rs}"
+
+cmn.imm op=0b001 [24:21]=0b1011 uses DataImmediate
+        when cond != 0xF && s
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "cmn{cond} {rn}, #{imm}"
+
+cmn.reg_imm op=0b000 [24:21]=0b1011 [4]=0 uses DataShiftImmediate
+            when cond != 0xF && s
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "cmn{cond} {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "cmn{cond} {rn}, {rm}, rrx"
+            | "cmn{cond} {rn}, {rm}, {shift} #{amount}"
+
+cmn.reg_reg op=0b000 [24:21]=0b1011 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF && s
+            | "cmn{cond} {rn}, {rm}, {shift} {rs}"
+
+orr.imm op=0b001 [24:21]=0b1100 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "orr{cond}{s?s} {rd}, {rn}, #{imm}"
+
+orr.reg_imm op=0b000 [24:21]=0b1100 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "orr{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "orr{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "orr{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+orr.reg_reg op=0b000 [24:21]=0b1100 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "orr{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+mov.imm op=0b001 [24:21]=0b1101 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "mov{cond}{s?s} {rd}, #{imm}"
+
+mov.reg_imm op=0b000 [24:21]=0b1101 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "mov{cond}{s?s} {rd}, {rm}"
+            | shift == 3 && shift_imm == 0 : "mov{cond}{s?s} {rd}, {rm}, rrx"
+            | "mov{cond}{s?s} {rd}, {rm}, {shift} #{amount}"
+
+mov.reg_reg op=0b000 [24:21]=0b1101 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "mov{cond}{s?s} {rd}, {rm}, {shift} {rs}"
+
+bic.imm op=0b001 [24:21]=0b1110 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "bic{cond}{s?s} {rd}, {rn}, #{imm}"
+
+bic.reg_imm op=0b000 [24:21]=0b1110 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "bic{cond}{s?s} {rd}, {rn}, {rm}"
+            | shift == 3 && shift_imm == 0 : "bic{cond}{s?s} {rd}, {rn}, {rm}, rrx"
+            | "bic{cond}{s?s} {rd}, {rn}, {rm}, {shift} #{amount}"
+
+bic.reg_reg op=0b000 [24:21]=0b1110 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "bic{cond}{s?s} {rd}, {rn}, {rm}, {shift} {rs}"
+
+mvn.imm op=0b001 [24:21]=0b1111 uses DataImmediate
+        when cond != 0xF
+        imm:u32 = rotate_right(imm8, rotate * 2, 32)
+        | "mvn{cond}{s?s} {rd}, #{imm}"
+
+mvn.reg_imm op=0b000 [24:21]=0b1111 [4]=0 uses DataShiftImmediate
+            when cond != 0xF
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | shift == 0 && shift_imm == 0 : "mvn{cond}{s?s} {rd}, {rm}"
+            | shift == 3 && shift_imm == 0 : "mvn{cond}{s?s} {rd}, {rm}, rrx"
+            | "mvn{cond}{s?s} {rd}, {rm}, {shift} #{amount}"
+
+mvn.reg_reg op=0b000 [24:21]=0b1111 [7]=0 [4]=1 uses DataShiftRegister
+            when cond != 0xF
+            | "mvn{cond}{s?s} {rd}, {rm}, {shift} {rs}"
+
+# Single Data Transfer (LDR, STR)
+form MemoryImmediate {
+    cond:cc[31:28]
+    pre:bool[24]
+    up:bool[23]
+    byte:bool[22]
+    write:bool[21]
+    rn:reg[19:16]
+    rd:reg[15:12]
+    off12:u12[11:0]
+}
+
+form MemoryRegister {
+    cond:cc[31:28]
+    pre:bool[24]
+    up:bool[23]
+    byte:bool[22]
+    write:bool[21]
+    rn:reg[19:16]
+    rd:reg[15:12]
+    shift_imm:u5[11:7]
+    shift:shift_kind[6:5]
+    rm:reg[3:0]
+}
+
+str.mem_imm op=0b010 [20]=0 uses MemoryImmediate
+            when cond != 0xF
+            | pre : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, #{up?:-}{off12}]{write?!}"
+            | "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], #{up?:-}{off12}"
+
+str.mem_reg op=0b011 [20]=0 [4]=0 uses MemoryRegister
+            when cond != 0xF && rm < 15
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | pre && shift == 0 && shift_imm == 0 : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}]{write?!}"
+            | pre && shift == 3 && shift_imm == 0 : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}, rrx]{write?!}"
+            | pre : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}, {shift} #{amount}]{write?!}"
+            | shift == 0 && shift_imm == 0 : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], {up?:-}{rm}"
+            | shift == 3 && shift_imm == 0 : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], {up?:-}{rm}, rrx"
+            | "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], {up?:-}{rm}, {shift} #{amount}"
+
+ldr.mem_imm op=0b010 [20]=1 uses MemoryImmediate
+            when cond != 0xF
+            | pre : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, #{up?:-}{off12}]{write?!}"
+            | "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], #{up?:-}{off12}"
+
+ldr.mem_reg op=0b011 [20]=1 [4]=0 uses MemoryRegister
+            when cond != 0xF && rm < 15
+            amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
+            | pre && shift == 0 && shift_imm == 0 : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}]{write?!}"
+            | pre && shift == 3 && shift_imm == 0 : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}, rrx]{write?!}"
+            | pre : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}, {shift} #{amount}]{write?!}"
+            | shift == 0 && shift_imm == 0 : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], {up?:-}{rm}"
+            | shift == 3 && shift_imm == 0 : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], {up?:-}{rm}, rrx"
+            | "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], {up?:-}{rm}, {shift} #{amount}"
+
+# Halfword and Signed Data Transfer(LDRH/STRH/LDRSB/LDRSH)
+form HalfwordImmediate {
+    cond:cc[31:28]
+    pre:bool[24]
+    up:bool[23]
+    write:bool[21]
+    rn:reg[19:16]
+    rd:reg[15:12]
+    off_hi:u4[11:8]
+    off_lo:u4[3:0]
+}
+
+form HalfwordRegister {
+    cond:cc[31:28]
+    pre:bool[24]
+    up:bool[23]
+    write:bool[21]
+    rn:reg[19:16]
+    rd:reg[15:12]
+    rm:reg[3:0]
+}
+
+strh.half_imm op=0b000 [20]=0 [7]=1 [6:5]=0b01 [4]=1 [22]=1 uses HalfwordImmediate
+              when cond != 0xF && (pre || write == 0)
+              half_offset:u8 = (off_hi << 4) + off_lo
+              | pre : "str{cond}h {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
+              | "str{cond}h {rd}, [{rn}], #{up?:-}{half_offset}"
+
+strh.half_reg op=0b000 [20]=0 [7]=1 [6:5]=0b01 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
+              when cond != 0xF && (pre || write == 0) && rm < 15
+              | pre : "str{cond}h {rd}, [{rn}, {up?:-}{rm}]{write?!}"
+              | "str{cond}h {rd}, [{rn}], {up?:-}{rm}"
+
+ldrh.half_imm op=0b000 [20]=1 [7]=1 [6:5]=0b01 [4]=1 [22]=1 uses HalfwordImmediate
+              when cond != 0xF && (pre || write == 0)
+              half_offset:u8 = (off_hi << 4) + off_lo
+              | pre : "ldr{cond}h {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
+              | "ldr{cond}h {rd}, [{rn}], #{up?:-}{half_offset}"
+
+ldrh.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b01 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
+              when cond != 0xF && (pre || write == 0) && rm < 15
+              | pre : "ldr{cond}h {rd}, [{rn}, {up?:-}{rm}]{write?!}"
+              | "ldr{cond}h {rd}, [{rn}], {up?:-}{rm}"
+
+ldrsb.half_imm op=0b000 [20]=1 [7]=1 [6:5]=0b10 [4]=1 [22]=1 uses HalfwordImmediate
+               when cond != 0xF && (pre || write == 0)
+               half_offset:u8 = (off_hi << 4) + off_lo
+               | pre : "ldr{cond}sb {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
+               | "ldr{cond}sb {rd}, [{rn}], #{up?:-}{half_offset}"
+
+ldrsb.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b10 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
+               when cond != 0xF && (pre || write == 0) && rm < 15
+               | pre : "ldr{cond}sb {rd}, [{rn}, {up?:-}{rm}]{write?!}"
+               | "ldr{cond}sb {rd}, [{rn}], {up?:-}{rm}"
+
+ldrsh.half_imm op=0b000 [20]=1 [7]=1 [6:5]=0b11 [4]=1 [22]=1 uses HalfwordImmediate
+               when cond != 0xF && (pre || write == 0)
+               half_offset:u8 = (off_hi << 4) + off_lo
+               | pre : "ldr{cond}sh {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
+               | "ldr{cond}sh {rd}, [{rn}], #{up?:-}{half_offset}"
+
+ldrsh.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b11 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
+               when cond != 0xF && (pre || write == 0) && rm < 15
+               | pre : "ldr{cond}sh {rd}, [{rn}, {up?:-}{rm}]{write?!}"
+               | "ldr{cond}sh {rd}, [{rn}], {up?:-}{rm}"
+
+# Block Data Transfer (LDM, STM)
+stm op=0b100 cond:cc[31:28] pre:bool[24] up:bool[23] user:bool[22] write:bool[21] [20]=0 rn:reg[19:16] list:u16[15:0]
+    when cond != 0xF && rn < 15
+    | "stm{cond}{up?i:d}{pre?b:a} {rn}{write?!}, \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}{list & 0x100?{list & 0xff?, }r8}{list & 0x200?{list & 0x1ff?, }r9}{list & 0x400?{list & 0x3ff?, }r10}{list & 0x800?{list & 0x7ff?, }r11}{list & 0x1000?{list & 0xfff?, }r12}{list & 0x2000?{list & 0x1fff?, }r13}{list & 0x4000?{list & 0x3fff?, }r14}{list & 0x8000?{list & 0x7fff?, }r15}\\}{user?^}"
+
+ldm op=0b100 cond:cc[31:28] pre:bool[24] up:bool[23] user:bool[22] write:bool[21] [20]=1 rn:reg[19:16] list:u16[15:0]
+    when cond != 0xF && rn < 15
+    | "ldm{cond}{up?i:d}{pre?b:a} {rn}{write?!}, \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}{list & 0x100?{list & 0xff?, }r8}{list & 0x200?{list & 0x1ff?, }r9}{list & 0x400?{list & 0x3ff?, }r10}{list & 0x800?{list & 0x7ff?, }r11}{list & 0x1000?{list & 0xfff?, }r12}{list & 0x2000?{list & 0x1fff?, }r13}{list & 0x4000?{list & 0x3fff?, }r14}{list & 0x8000?{list & 0x7fff?, }r15}\\}{user?^}"
+
+# Single Data Swap (SWP)
+swp op=0b000 cond:cc[31:28] [24:23]=0b10 byte:bool[22] [21:20]=0 rn:reg[19:16] rd:reg[15:12] [11:4]=0b00001001 rm:reg[3:0]
+    when cond != 0xF && rn < 15 && rd < 15 && rm < 15
+    | "swp{cond}{byte?b} {rd}, {rm}, [{rn}]"
+
+# Software Interrupt (SWI)
+swi op=0b111 cond:cc[31:28] [24]=1 comment:u24[23:0]
+    when cond != 0xF
+    | "swi{cond} #{comment}"
+
+dispatch data_processing {
+    and.*, eor.*, sub.*, rsb.*, add.*, adc.*, sbc.*, rsc.*,
+    tst.*, teq.*, cmp.*, cmn.*, orr.*, mov.*, bic.*, mvn.*
+}
+dispatch psr_transfer { mrs, msr.* }
+dispatch multiply_long { umull, umlal, smull, smlal }
+dispatch single_transfer { ldr.mem_imm, ldr.mem_reg, str.mem_imm, str.mem_reg }
+dispatch halfword_transfer { strh.*, ldrh.*, ldrsb.*, ldrsh.* }
+dispatch block_transfer { ldm, stm }
