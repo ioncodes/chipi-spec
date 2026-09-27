@@ -40,14 +40,14 @@ mrs op=0b000 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:16]=0b001111 rd:re
     when cond != 0xF && rd != 15
     | "mrs{cond} {rd}, {psr}"
 
-msr.psr_reg op=0b000 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 mask:u4[19:16] [15:12]=0b1111 [11:4]=0 rm:reg[3:0]
-            when cond != 0xF && mask != 0 && rm != 15
-            | "msr{cond} {psr}_{mask & 8?f}{mask & 4?s}{mask & 2?x}{mask & 1?c}, {rm}"
+msr.psr_reg op=0b000 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 flags:bool[19] status:bool[18] extension:bool[17] control:bool[16] [15:12]=0b1111 [11:4]=0 rm:reg[3:0]
+            when cond != 0xF && (flags || status || extension || control) && rm != 15
+            | "msr{cond} {psr}_{flags?f}{status?s}{extension?x}{control?c}, {rm}"
 
-msr.psr_imm op=0b001 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 mask:u4[19:16] [15:12]=0b1111 rotate:u4[11:8] imm8:u8[7:0]
-            when cond != 0xF && mask != 0
+msr.psr_imm op=0b001 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 flags:bool[19] status:bool[18] extension:bool[17] control:bool[16] [15:12]=0b1111 rotate:u4[11:8] imm8:u8[7:0]
+            when cond != 0xF && (flags || status || extension || control)
             imm:u32 = rotate_right(imm8, rotate * 2, 32)
-            | "msr{cond} {psr}_{mask & 8?f}{mask & 4?s}{mask & 2?x}{mask & 1?c}, #{imm}"
+            | "msr{cond} {psr}_{flags?f}{status?s}{extension?x}{control?c}, #{imm}"
 
 # Multiply and Multiply-Accumulate (MUL, MLA)
 multiply op=0b000 cond:cc[31:28] [24:22]=0b000 a:bool[21] s:bool[20] dest:reg[19:16] acc:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
