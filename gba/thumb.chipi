@@ -19,7 +19,7 @@ operand cc = u4 {
         0x0 => "eq", 0x1 => "ne", 0x2 => "cs", 0x3 => "cc",
         0x4 => "mi", 0x5 => "pl", 0x6 => "vs", 0x7 => "vc",
         0x8 => "hi", 0x9 => "ls", 0xA => "ge", 0xB => "lt",
-        0xC => "gt", 0xD => "le", _ => hex
+        0xC => "gt", 0xD => "le", 0xE => "al", _ => hex
     })
 }
 
@@ -111,21 +111,18 @@ mvn.reg op=0b010 [12:10]=0b000 [9:6]=0xF rs:low_reg[5:3] rd:low_reg[2:0]
 
 # Format 5: Hi register operations/branch exchange
 add.high op=0b010 [12:10]=0b001 [9:8]=0 hd:bool[7] high_src:reg[6:3] rd:low_reg[2:0]
-         when hd || high_src >= 8
          high_dest:reg = rd + (hd << 3)
          | "add {high_dest}, {high_src}"
 
 cmp.high op=0b010 [12:10]=0b001 [9:8]=1 hd:bool[7] high_src:reg[6:3] rd:low_reg[2:0]
-         when hd || high_src >= 8
          high_dest:reg = rd + (hd << 3)
          | "cmp {high_dest}, {high_src}"
 
 mov.high op=0b010 [12:10]=0b001 [9:8]=2 hd:bool[7] high_src:reg[6:3] rd:low_reg[2:0]
-         when hd || high_src >= 8
          high_dest:reg = rd + (hd << 3)
          | "mov {high_dest}, {high_src}"
 
-bx op=0b010 [12:7]=0b001110 high_src:reg[6:3] [2:0]=0
+bx op=0b010 [12:8]=0b00111 high_src:reg[6:3]
    | "bx {high_src}"
 
 # Format 6: PC-relative load
@@ -219,7 +216,7 @@ ldmia op=0b110 [12]=0 [11]=1 base:low_reg[10:8] list:u8[7:0]
 
 # Format 16: conditional branch
 b.cond op=0b110 [12]=1 cond:cc[11:8] cond_offset:branch8[7:0]
-       when cond < 0xE
+       when cond < 0xF
        | "b{cond} {cond_offset}"
 
 # Format 17: software interrupt

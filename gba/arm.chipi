@@ -37,39 +37,39 @@ b op=0b101 cond:cc[31:28] link:bool[24] offset:branch_offset[23:0]
 
 # PSR Transfer (MRS, MSR)
 mrs op=0b000 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:16]=0b001111 rd:reg[15:12] [11:0]=0
-    when cond != 0xF && rd != 15
+    when cond != 0xF
     | "mrs{cond} {rd}, {psr}"
 
 msr.psr_reg op=0b000 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 flags:bool[19] status:bool[18] extension:bool[17] control:bool[16] [15:12]=0b1111 [11:4]=0 rm:reg[3:0]
-            when cond != 0xF && (flags || status || extension || control) && rm != 15
+            when cond != 0xF
             | "msr{cond} {psr}_{flags?f}{status?s}{extension?x}{control?c}, {rm}"
 
 msr.psr_imm op=0b001 cond:cc[31:28] [24:23]=0b10 psr:psr_name[22] [21:20]=0b10 flags:bool[19] status:bool[18] extension:bool[17] control:bool[16] [15:12]=0b1111 rotate:u4[11:8] imm8:u8[7:0]
-            when cond != 0xF && (flags || status || extension || control)
+            when cond != 0xF
             imm:u32 = rotate_right(imm8, rotate * 2, 32)
             | "msr{cond} {psr}_{flags?f}{status?s}{extension?x}{control?c}, #{imm}"
 
 # Multiply and Multiply-Accumulate (MUL, MLA)
 multiply op=0b000 cond:cc[31:28] [24:22]=0b000 a:bool[21] s:bool[20] dest:reg[19:16] acc:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
-         when cond != 0xF && dest < 15 && acc < 15 && rs < 15 && rm < 15 && dest != rm && (a || acc == 0)
+         when cond != 0xF
          | "{a?mla:mul}{cond}{s?s} {dest}, {rm}, {rs}{a?, {acc}}"
 
 
 # Multiply Long and Multiply-Accumulate Long (MULL,MLAL)
 umull op=0b000 cond:cc[31:28] [24:21]=0b0100 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
-      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      when cond != 0xF
       | "umull{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
 
 umlal op=0b000 cond:cc[31:28] [24:21]=0b0101 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
-      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      when cond != 0xF
       | "umlal{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
 
 smull op=0b000 cond:cc[31:28] [24:21]=0b0110 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
-      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      when cond != 0xF
       | "smull{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
 
 smlal op=0b000 cond:cc[31:28] [24:21]=0b0111 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
-      when cond != 0xF && hi < 15 && lo < 15 && rs < 15 && rm < 15 && hi != lo && hi != rm && lo != rm
+      when cond != 0xF
       | "smlal{cond}{s?s} {lo}, {hi}, {rm}, {rs}"
 
 # Data Processing
@@ -389,7 +389,7 @@ str.mem_imm op=0b010 [20]=0 uses MemoryImmediate
             | "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], #{up?:-}{off12}"
 
 str.mem_reg op=0b011 [20]=0 [4]=0 uses MemoryRegister
-            when cond != 0xF && rm < 15
+            when cond != 0xF
             amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
             | pre && shift == 0 && shift_imm == 0 : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}]{write?!}"
             | pre && shift == 3 && shift_imm == 0 : "str{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}, rrx]{write?!}"
@@ -404,7 +404,7 @@ ldr.mem_imm op=0b010 [20]=1 uses MemoryImmediate
             | "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}], #{up?:-}{off12}"
 
 ldr.mem_reg op=0b011 [20]=1 [4]=0 uses MemoryRegister
-            when cond != 0xF && rm < 15
+            when cond != 0xF
             amount:shift_amount = shift_imm == 0 && (shift == 1 || shift == 2) ? 32 : shift_imm
             | pre && shift == 0 && shift_imm == 0 : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}]{write?!}"
             | pre && shift == 3 && shift_imm == 0 : "ldr{cond}{byte?b}{pre == 0 && write?t} {rd}, [{rn}, {up?:-}{rm}, rrx]{write?!}"
@@ -436,61 +436,61 @@ form HalfwordRegister {
 }
 
 strh.half_imm op=0b000 [20]=0 [7]=1 [6:5]=0b01 [4]=1 [22]=1 uses HalfwordImmediate
-              when cond != 0xF && (pre || write == 0)
+              when cond != 0xF
               half_offset:u8 = (off_hi << 4) + off_lo
               | pre : "str{cond}h {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
               | "str{cond}h {rd}, [{rn}], #{up?:-}{half_offset}"
 
-strh.half_reg op=0b000 [20]=0 [7]=1 [6:5]=0b01 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
-              when cond != 0xF && (pre || write == 0) && rm < 15
+strh.half_reg op=0b000 [20]=0 [7]=1 [6:5]=0b01 [4]=1 [22]=0 uses HalfwordRegister
+              when cond != 0xF
               | pre : "str{cond}h {rd}, [{rn}, {up?:-}{rm}]{write?!}"
               | "str{cond}h {rd}, [{rn}], {up?:-}{rm}"
 
 ldrh.half_imm op=0b000 [20]=1 [7]=1 [6:5]=0b01 [4]=1 [22]=1 uses HalfwordImmediate
-              when cond != 0xF && (pre || write == 0)
+              when cond != 0xF
               half_offset:u8 = (off_hi << 4) + off_lo
               | pre : "ldr{cond}h {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
               | "ldr{cond}h {rd}, [{rn}], #{up?:-}{half_offset}"
 
-ldrh.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b01 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
-              when cond != 0xF && (pre || write == 0) && rm < 15
+ldrh.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b01 [4]=1 [22]=0 uses HalfwordRegister
+              when cond != 0xF
               | pre : "ldr{cond}h {rd}, [{rn}, {up?:-}{rm}]{write?!}"
               | "ldr{cond}h {rd}, [{rn}], {up?:-}{rm}"
 
 ldrsb.half_imm op=0b000 [20]=1 [7]=1 [6:5]=0b10 [4]=1 [22]=1 uses HalfwordImmediate
-               when cond != 0xF && (pre || write == 0)
+               when cond != 0xF
                half_offset:u8 = (off_hi << 4) + off_lo
                | pre : "ldr{cond}sb {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
                | "ldr{cond}sb {rd}, [{rn}], #{up?:-}{half_offset}"
 
-ldrsb.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b10 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
-               when cond != 0xF && (pre || write == 0) && rm < 15
+ldrsb.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b10 [4]=1 [22]=0 uses HalfwordRegister
+               when cond != 0xF
                | pre : "ldr{cond}sb {rd}, [{rn}, {up?:-}{rm}]{write?!}"
                | "ldr{cond}sb {rd}, [{rn}], {up?:-}{rm}"
 
 ldrsh.half_imm op=0b000 [20]=1 [7]=1 [6:5]=0b11 [4]=1 [22]=1 uses HalfwordImmediate
-               when cond != 0xF && (pre || write == 0)
+               when cond != 0xF
                half_offset:u8 = (off_hi << 4) + off_lo
                | pre : "ldr{cond}sh {rd}, [{rn}, #{up?:-}{half_offset}]{write?!}"
                | "ldr{cond}sh {rd}, [{rn}], #{up?:-}{half_offset}"
 
-ldrsh.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b11 [4]=1 [22]=0 [11:8]=0 uses HalfwordRegister
-               when cond != 0xF && (pre || write == 0) && rm < 15
+ldrsh.half_reg op=0b000 [20]=1 [7]=1 [6:5]=0b11 [4]=1 [22]=0 uses HalfwordRegister
+               when cond != 0xF
                | pre : "ldr{cond}sh {rd}, [{rn}, {up?:-}{rm}]{write?!}"
                | "ldr{cond}sh {rd}, [{rn}], {up?:-}{rm}"
 
 # Block Data Transfer (LDM, STM)
 stm op=0b100 cond:cc[31:28] pre:bool[24] up:bool[23] user:bool[22] write:bool[21] [20]=0 rn:reg[19:16] list:u16[15:0]
-    when cond != 0xF && rn < 15
+    when cond != 0xF
     | "stm{cond}{up?i:d}{pre?b:a} {rn}{write?!}, \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}{list & 0x100?{list & 0xff?, }r8}{list & 0x200?{list & 0x1ff?, }r9}{list & 0x400?{list & 0x3ff?, }r10}{list & 0x800?{list & 0x7ff?, }r11}{list & 0x1000?{list & 0xfff?, }r12}{list & 0x2000?{list & 0x1fff?, }r13}{list & 0x4000?{list & 0x3fff?, }r14}{list & 0x8000?{list & 0x7fff?, }r15}\\}{user?^}"
 
 ldm op=0b100 cond:cc[31:28] pre:bool[24] up:bool[23] user:bool[22] write:bool[21] [20]=1 rn:reg[19:16] list:u16[15:0]
-    when cond != 0xF && rn < 15
+    when cond != 0xF
     | "ldm{cond}{up?i:d}{pre?b:a} {rn}{write?!}, \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}{list & 0x100?{list & 0xff?, }r8}{list & 0x200?{list & 0x1ff?, }r9}{list & 0x400?{list & 0x3ff?, }r10}{list & 0x800?{list & 0x7ff?, }r11}{list & 0x1000?{list & 0xfff?, }r12}{list & 0x2000?{list & 0x1fff?, }r13}{list & 0x4000?{list & 0x3fff?, }r14}{list & 0x8000?{list & 0x7fff?, }r15}\\}{user?^}"
 
 # Single Data Swap (SWP)
 swp op=0b000 cond:cc[31:28] [24:23]=0b10 byte:bool[22] [21:20]=0 rn:reg[19:16] rd:reg[15:12] [11:4]=0b00001001 rm:reg[3:0]
-    when cond != 0xF && rn < 15 && rd < 15 && rm < 15
+    when cond != 0xF
     | "swp{cond}{byte?b} {rd}, {rm}, [{rn}]"
 
 # Software Interrupt (SWI)
