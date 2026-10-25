@@ -122,8 +122,11 @@ mov.high op=0b010 [12:10]=0b001 [9:8]=2 hd:bool[7] high_src:reg[6:3] rd:low_reg[
          high_dest:reg = rd + (hd << 3)
          | "mov {high_dest}, {high_src}"
 
-bx op=0b010 [12:8]=0b00111 high_src:reg[6:3]
+bx op=0b010 [12:8]=0b00111 [7]=0 high_src:reg[6:3] [2:0]=0
    | "bx {high_src}"
+
+blx op=0b010 [12:8]=0b00111 [7]=1 high_src:reg[6:3] [2:0]=0
+    | "blx {high_src}"
 
 # Format 6: PC-relative load
 ldr.literal op=0b010 [12:11]=0b01 dest8:low_reg[10:8] scaled_offset:word_offset8[7:0]
@@ -253,4 +256,4 @@ dispatch immediate_transfer {
 }
 dispatch address { add.pc, add.sp, add.sp_adjust, sub.sp_adjust }
 dispatch multiple_transfer { push, pop, stmia, ldmia }
-dispatch branch { b.*, bx, blh, bll }
+dispatch branch { b.*, bx, blx, blh, bll }
