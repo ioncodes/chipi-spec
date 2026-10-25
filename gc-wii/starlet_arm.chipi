@@ -57,6 +57,11 @@ multiply op=0b000 cond:cc[31:28] [24:22]=0b000 a:bool[21] s:bool[20] dest:reg[19
          | "{a?mla:mul}{cond}{s?s} {dest}, {rm}, {rs}{a?, {acc}}"
 
 
+# Signed Halfword Multiply (SMULBB)
+smulbb op=0b000 cond:cc[31:28] [24:20]=0b10110 dest:reg[19:16] [15:12]=0 rs:reg[11:8] [7:4]=0b1000 rm:reg[3:0]
+       when cond != 0xF && dest != 15 && rm != 15 && rs != 15
+       | "smulbb{cond} {dest}, {rm}, {rs}"
+
 # Multiply Long and Multiply-Accumulate Long (MULL,MLAL)
 umull op=0b000 cond:cc[31:28] [24:21]=0b0100 s:bool[20] hi:reg[19:16] lo:reg[15:12] rs:reg[11:8] [7:4]=0b1001 rm:reg[3:0]
       when cond != 0xF
