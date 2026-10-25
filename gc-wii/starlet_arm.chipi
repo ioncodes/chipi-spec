@@ -490,6 +490,11 @@ ldm op=0b100 cond:cc[31:28] pre:bool[24] up:bool[23] user:bool[22] write:bool[21
     when cond != 0xF
     | "ldm{cond}{up?i:d}{pre?b:a} {rn}{write?!}, \\{{list & 0x1?r0}{list & 0x2?{list & 0x1?, }r1}{list & 0x4?{list & 0x3?, }r2}{list & 0x8?{list & 0x7?, }r3}{list & 0x10?{list & 0xf?, }r4}{list & 0x20?{list & 0x1f?, }r5}{list & 0x40?{list & 0x3f?, }r6}{list & 0x80?{list & 0x7f?, }r7}{list & 0x100?{list & 0xff?, }r8}{list & 0x200?{list & 0x1ff?, }r9}{list & 0x400?{list & 0x3ff?, }r10}{list & 0x800?{list & 0x7ff?, }r11}{list & 0x1000?{list & 0xfff?, }r12}{list & 0x2000?{list & 0x1fff?, }r13}{list & 0x4000?{list & 0x3fff?, }r14}{list & 0x8000?{list & 0x7fff?, }r15}\\}{user?^}"
 
+# Count Leading Zeros (CLZ)
+clz op=0b000 cond:cc[31:28] [24:16]=0x16F rd:reg[15:12] [11:4]=0xF1 rm:reg[3:0]
+    when cond != 0xF && rd != 15 && rm != 15
+    | "clz{cond} {rd}, {rm}"
+
 # Single Data Swap (SWP)
 swp op=0b000 cond:cc[31:28] [24:23]=0b10 byte:bool[22] [21:20]=0 rn:reg[19:16] rd:reg[15:12] [11:4]=0b00001001 rm:reg[3:0]
     when cond != 0xF
