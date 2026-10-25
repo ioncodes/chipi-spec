@@ -7,6 +7,8 @@ decoder ARM {
 selector op [27:25]
 
 operand reg = u4 { display("r{}") }
+operand cp_number = u4 { display(dec) }
+operand cp_opcode = u3 { display(dec) }
 operand shift_amount = u8 { display(dec) }
 operand branch_offset = i32 { sign_extend(24), shift_left(2), display(signed_hex) }
 operand psr_name = u1 { display(names { 0 => "cpsr", 1 => "spsr", _ => hex }) }
@@ -492,6 +494,15 @@ ldm op=0b100 cond:cc[31:28] pre:bool[24] up:bool[23] user:bool[22] write:bool[21
 swp op=0b000 cond:cc[31:28] [24:23]=0b10 byte:bool[22] [21:20]=0 rn:reg[19:16] rd:reg[15:12] [11:4]=0b00001001 rm:reg[3:0]
     when cond != 0xF
     | "swp{cond}{byte?b} {rd}, {rm}, [{rn}]"
+
+# Coprocessor register transfers (MCR, MRC)
+mcr op=0b111 cond:cc[31:28] [24]=0 opc1:cp_opcode[23:21] [20]=0 crn:cp_number[19:16] rd:reg[15:12] coproc:cp_number[11:8] opc2:cp_opcode[7:5] [4]=1 crm:cp_number[3:0]
+    when cond != 0xF
+    | "mcr{cond} p{coproc}, {opc1}, {rd}, c{crn}, c{crm}, {opc2}"
+
+mrc op=0b111 cond:cc[31:28] [24]=0 opc1:cp_opcode[23:21] [20]=1 crn:cp_number[19:16] rd:reg[15:12] coproc:cp_number[11:8] opc2:cp_opcode[7:5] [4]=1 crm:cp_number[3:0]
+    when cond != 0xF
+    | "mrc{cond} p{coproc}, {opc1}, {rd}, c{crn}, c{crm}, {opc2}"
 
 # Software Interrupt (SWI)
 swi op=0b111 cond:cc[31:28] [24]=1 comment:u24[23:0]
