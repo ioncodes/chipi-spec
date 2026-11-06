@@ -5,7 +5,7 @@ A collection of [chipi](https://github.com/ioncodes/chipi) instruction-decoder s
 Each `.chipi` file describes how to decode and disassemble a processor's
 instruction set. Specs are grouped by platform:
 
-- `gc-wii/`: GameCube / Wii (Gekko CPU, DSP)
+- `gc-wii/`: GameCube / Wii (Gekko CPU, DSP, Starlet)
 - `snes/`: Super Nintendo (Ricoh 5A22, Super FX GSU, SPC700)
 - `gba/`: GameBoy Advance (ARM7TDMI/ARMv4T incl. Thumb)
 
