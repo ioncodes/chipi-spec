@@ -8,5 +8,6 @@ instruction set. Specs are grouped by platform:
 - `gc-wii/`: GameCube / Wii (Gekko CPU, DSP, Starlet)
 - `snes/`: Super Nintendo (Ricoh 5A22, Super FX GSU, SPC700)
 - `gba/`: GameBoy Advance (ARM7TDMI/ARMv4T incl. Thumb)
+- `psp/`: PlayStation Portable (Allegrex CPU+FPU)
 
 Licensed under MPL-2.0. See [LICENSE](LICENSE).

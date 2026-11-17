@@ -1,0 +1,1495 @@
+decoder Allegrex {
+    width = 32
+    bit_order = lsb0
+    endian = little
+}
+
+selector op [31:26]
+
+operand gpr = u5 {
+    display(names {
+        0 => "zero", 1 => "at", 2 => "v0", 3 => "v1", 4 => "a0", 5 => "a1", 6 => "a2", 7 => "a3",
+        8 => "t0", 9 => "t1", 10 => "t2", 11 => "t3", 12 => "t4", 13 => "t5", 14 => "t6", 15 => "t7",
+        16 => "s0", 17 => "s1", 18 => "s2", 19 => "s3", 20 => "s4", 21 => "s5", 22 => "s6", 23 => "s7",
+        24 => "t8", 25 => "t9", 26 => "k0", 27 => "k1", 28 => "gp", 29 => "sp", 30 => "fp", 31 => "ra", _ => dec
+    })
+}
+
+operand cop0Register       = u5 { display("c0_{}") }
+operand fpr                = u5 { display("f{}") }
+operand fpuControlRegister = u5 { display("fcr{}") }
+operand debug_reg          = u5 { display("dr{}") }
+
+operand d1 = u1 { display(dec) }
+operand d2 = u2 { display(dec) }
+operand d3 = u3 { display(dec) }
+operand d5 = u5 { display(dec) }
+operand d6 = u6 { display(dec) }
+operand d7 = u7 { display(dec) }
+operand d8 = u8 { display(dec) }
+operand x5 = u5 { display(hex) }
+operand x20 = u20 { display(hex) }
+operand x24 = u24 { display(hex) }
+operand x32 = u32 { display(hex) }
+
+type uimm16  = u16 { display(hex) }
+type simm16  = i32 { sign_extend(16), display(signed_hex) }
+type branch  = i32 { shift_left(2), sign_extend(18), display(signed_hex) }
+type vdisp14 = i32 { shift_left(2), sign_extend(16), display(signed_hex) }
+type jtarget = u32 { zero_extend(26), shift_left(2), display(hex) }
+
+operand v1 = u7 {
+    display(names {
+        0 => "S000", 1 => "S010", 2 => "S020", 3 => "S030", 4 => "S100", 5 => "S110", 6 => "S120", 7 => "S130",
+        8 => "S200", 9 => "S210", 10 => "S220", 11 => "S230", 12 => "S300", 13 => "S310", 14 => "S320", 15 => "S330",
+        16 => "S400", 17 => "S410", 18 => "S420", 19 => "S430", 20 => "S500", 21 => "S510", 22 => "S520", 23 => "S530",
+        24 => "S600", 25 => "S610", 26 => "S620", 27 => "S630", 28 => "S700", 29 => "S710", 30 => "S720", 31 => "S730",
+        32 => "S001", 33 => "S011", 34 => "S021", 35 => "S031", 36 => "S101", 37 => "S111", 38 => "S121", 39 => "S131",
+        40 => "S201", 41 => "S211", 42 => "S221", 43 => "S231", 44 => "S301", 45 => "S311", 46 => "S321", 47 => "S331",
+        48 => "S401", 49 => "S411", 50 => "S421", 51 => "S431", 52 => "S501", 53 => "S511", 54 => "S521", 55 => "S531",
+        56 => "S601", 57 => "S611", 58 => "S621", 59 => "S631", 60 => "S701", 61 => "S711", 62 => "S721", 63 => "S731",
+        64 => "S002", 65 => "S012", 66 => "S022", 67 => "S032", 68 => "S102", 69 => "S112", 70 => "S122", 71 => "S132",
+        72 => "S202", 73 => "S212", 74 => "S222", 75 => "S232", 76 => "S302", 77 => "S312", 78 => "S322", 79 => "S332",
+        80 => "S402", 81 => "S412", 82 => "S422", 83 => "S432", 84 => "S502", 85 => "S512", 86 => "S522", 87 => "S532",
+        88 => "S602", 89 => "S612", 90 => "S622", 91 => "S632", 92 => "S702", 93 => "S712", 94 => "S722", 95 => "S732",
+        96 => "S003", 97 => "S013", 98 => "S023", 99 => "S033", 100 => "S103", 101 => "S113", 102 => "S123", 103 => "S133",
+        104 => "S203", 105 => "S213", 106 => "S223", 107 => "S233", 108 => "S303", 109 => "S313", 110 => "S323", 111 => "S333",
+        112 => "S403", 113 => "S413", 114 => "S423", 115 => "S433", 116 => "S503", 117 => "S513", 118 => "S523", 119 => "S533",
+        120 => "S603", 121 => "S613", 122 => "S623", 123 => "S633", 124 => "S703", 125 => "S713", 126 => "S723", 127 => "S733", _ => dec
+    })
+}
+
+operand v3 = u7 {
+    display(names {
+        0 => "C000", 1 => "C010", 2 => "C020", 3 => "C030", 4 => "C100", 5 => "C110", 6 => "C120", 7 => "C130",
+        8 => "C200", 9 => "C210", 10 => "C220", 11 => "C230", 12 => "C300", 13 => "C310", 14 => "C320", 15 => "C330",
+        16 => "C400", 17 => "C410", 18 => "C420", 19 => "C430", 20 => "C500", 21 => "C510", 22 => "C520", 23 => "C530",
+        24 => "C600", 25 => "C610", 26 => "C620", 27 => "C630", 28 => "C700", 29 => "C710", 30 => "C720", 31 => "C730",
+        32 => "R000", 33 => "R001", 34 => "R002", 35 => "R003", 36 => "R100", 37 => "R101", 38 => "R102", 39 => "R103",
+        40 => "R200", 41 => "R201", 42 => "R202", 43 => "R203", 44 => "R300", 45 => "R301", 46 => "R302", 47 => "R303",
+        48 => "R400", 49 => "R401", 50 => "R402", 51 => "R403", 52 => "R500", 53 => "R501", 54 => "R502", 55 => "R503",
+        56 => "R600", 57 => "R601", 58 => "R602", 59 => "R603", 60 => "R700", 61 => "R701", 62 => "R702", 63 => "R703",
+        64 => "C001", 65 => "C011", 66 => "C021", 67 => "C031", 68 => "C101", 69 => "C111", 70 => "C121", 71 => "C131",
+        72 => "C201", 73 => "C211", 74 => "C221", 75 => "C231", 76 => "C301", 77 => "C311", 78 => "C321", 79 => "C331",
+        80 => "C401", 81 => "C411", 82 => "C421", 83 => "C431", 84 => "C501", 85 => "C511", 86 => "C521", 87 => "C531",
+        88 => "C601", 89 => "C611", 90 => "C621", 91 => "C631", 92 => "C701", 93 => "C711", 94 => "C721", 95 => "C731",
+        96 => "R010", 97 => "R011", 98 => "R012", 99 => "R013", 100 => "R110", 101 => "R111", 102 => "R112", 103 => "R113",
+        104 => "R210", 105 => "R211", 106 => "R212", 107 => "R213", 108 => "R310", 109 => "R311", 110 => "R312", 111 => "R313",
+        112 => "R410", 113 => "R411", 114 => "R412", 115 => "R413", 116 => "R510", 117 => "R511", 118 => "R512", 119 => "R513",
+        120 => "R610", 121 => "R611", 122 => "R612", 123 => "R613", 124 => "R710", 125 => "R711", 126 => "R712", 127 => "R713", _ => dec
+    })
+}
+
+operand m3 = u7 {
+    display(names {
+        0 => "M000", 1 => "M010", 2 => "M020", 3 => "M030", 4 => "M100", 5 => "M110", 6 => "M120", 7 => "M130",
+        8 => "M200", 9 => "M210", 10 => "M220", 11 => "M230", 12 => "M300", 13 => "M310", 14 => "M320", 15 => "M330",
+        16 => "M400", 17 => "M410", 18 => "M420", 19 => "M430", 20 => "M500", 21 => "M510", 22 => "M520", 23 => "M530",
+        24 => "M600", 25 => "M610", 26 => "M620", 27 => "M630", 28 => "M700", 29 => "M710", 30 => "M720", 31 => "M730",
+        32 => "E000", 33 => "E001", 34 => "E002", 35 => "E003", 36 => "E100", 37 => "E101", 38 => "E102", 39 => "E103",
+        40 => "E200", 41 => "E201", 42 => "E202", 43 => "E203", 44 => "E300", 45 => "E301", 46 => "E302", 47 => "E303",
+        48 => "E400", 49 => "E401", 50 => "E402", 51 => "E403", 52 => "E500", 53 => "E501", 54 => "E502", 55 => "E503",
+        56 => "E600", 57 => "E601", 58 => "E602", 59 => "E603", 60 => "E700", 61 => "E701", 62 => "E702", 63 => "E703",
+        64 => "M001", 65 => "M011", 66 => "M021", 67 => "M031", 68 => "M101", 69 => "M111", 70 => "M121", 71 => "M131",
+        72 => "M201", 73 => "M211", 74 => "M221", 75 => "M231", 76 => "M301", 77 => "M311", 78 => "M321", 79 => "M331",
+        80 => "M401", 81 => "M411", 82 => "M421", 83 => "M431", 84 => "M501", 85 => "M511", 86 => "M521", 87 => "M531",
+        88 => "M601", 89 => "M611", 90 => "M621", 91 => "M631", 92 => "M701", 93 => "M711", 94 => "M721", 95 => "M731",
+        96 => "E010", 97 => "E011", 98 => "E012", 99 => "E013", 100 => "E110", 101 => "E111", 102 => "E112", 103 => "E113",
+        104 => "E210", 105 => "E211", 106 => "E212", 107 => "E213", 108 => "E310", 109 => "E311", 110 => "E312", 111 => "E313",
+        112 => "E410", 113 => "E411", 114 => "E412", 115 => "E413", 116 => "E510", 117 => "E511", 118 => "E512", 119 => "E513",
+        120 => "E610", 121 => "E611", 122 => "E612", 123 => "E613", 124 => "E710", 125 => "E711", 126 => "E712", 127 => "E713", _ => dec
+    })
+}
+
+operand vpq = u7 {
+    display(names {
+        0 => "C000", 1 => "C010", 2 => "C020", 3 => "C030", 4 => "C100", 5 => "C110", 6 => "C120", 7 => "C130",
+        8 => "C200", 9 => "C210", 10 => "C220", 11 => "C230", 12 => "C300", 13 => "C310", 14 => "C320", 15 => "C330",
+        16 => "C400", 17 => "C410", 18 => "C420", 19 => "C430", 20 => "C500", 21 => "C510", 22 => "C520", 23 => "C530",
+        24 => "C600", 25 => "C610", 26 => "C620", 27 => "C630", 28 => "C700", 29 => "C710", 30 => "C720", 31 => "C730",
+        32 => "R000", 33 => "R001", 34 => "R002", 35 => "R003", 36 => "R100", 37 => "R101", 38 => "R102", 39 => "R103",
+        40 => "R200", 41 => "R201", 42 => "R202", 43 => "R203", 44 => "R300", 45 => "R301", 46 => "R302", 47 => "R303",
+        48 => "R400", 49 => "R401", 50 => "R402", 51 => "R403", 52 => "R500", 53 => "R501", 54 => "R502", 55 => "R503",
+        56 => "R600", 57 => "R601", 58 => "R602", 59 => "R603", 60 => "R700", 61 => "R701", 62 => "R702", 63 => "R703",
+        64 => "C002", 65 => "C012", 66 => "C022", 67 => "C032", 68 => "C102", 69 => "C112", 70 => "C122", 71 => "C132",
+        72 => "C202", 73 => "C212", 74 => "C222", 75 => "C232", 76 => "C302", 77 => "C312", 78 => "C322", 79 => "C332",
+        80 => "C402", 81 => "C412", 82 => "C422", 83 => "C432", 84 => "C502", 85 => "C512", 86 => "C522", 87 => "C532",
+        88 => "C602", 89 => "C612", 90 => "C622", 91 => "C632", 92 => "C702", 93 => "C712", 94 => "C722", 95 => "C732",
+        96 => "R020", 97 => "R021", 98 => "R022", 99 => "R023", 100 => "R120", 101 => "R121", 102 => "R122", 103 => "R123",
+        104 => "R220", 105 => "R221", 106 => "R222", 107 => "R223", 108 => "R320", 109 => "R321", 110 => "R322", 111 => "R323",
+        112 => "R420", 113 => "R421", 114 => "R422", 115 => "R423", 116 => "R520", 117 => "R521", 118 => "R522", 119 => "R523",
+        120 => "R620", 121 => "R621", 122 => "R622", 123 => "R623", 124 => "R720", 125 => "R721", 126 => "R722", 127 => "R723", _ => dec
+    })
+}
+
+operand mpq = u7 {
+    display(names {
+        0 => "M000", 1 => "M010", 2 => "M020", 3 => "M030", 4 => "M100", 5 => "M110", 6 => "M120", 7 => "M130",
+        8 => "M200", 9 => "M210", 10 => "M220", 11 => "M230", 12 => "M300", 13 => "M310", 14 => "M320", 15 => "M330",
+        16 => "M400", 17 => "M410", 18 => "M420", 19 => "M430", 20 => "M500", 21 => "M510", 22 => "M520", 23 => "M530",
+        24 => "M600", 25 => "M610", 26 => "M620", 27 => "M630", 28 => "M700", 29 => "M710", 30 => "M720", 31 => "M730",
+        32 => "E000", 33 => "E001", 34 => "E002", 35 => "E003", 36 => "E100", 37 => "E101", 38 => "E102", 39 => "E103",
+        40 => "E200", 41 => "E201", 42 => "E202", 43 => "E203", 44 => "E300", 45 => "E301", 46 => "E302", 47 => "E303",
+        48 => "E400", 49 => "E401", 50 => "E402", 51 => "E403", 52 => "E500", 53 => "E501", 54 => "E502", 55 => "E503",
+        56 => "E600", 57 => "E601", 58 => "E602", 59 => "E603", 60 => "E700", 61 => "E701", 62 => "E702", 63 => "E703",
+        64 => "M002", 65 => "M012", 66 => "M022", 67 => "M032", 68 => "M102", 69 => "M112", 70 => "M122", 71 => "M132",
+        72 => "M202", 73 => "M212", 74 => "M222", 75 => "M232", 76 => "M302", 77 => "M312", 78 => "M322", 79 => "M332",
+        80 => "M402", 81 => "M412", 82 => "M422", 83 => "M432", 84 => "M502", 85 => "M512", 86 => "M522", 87 => "M532",
+        88 => "M602", 89 => "M612", 90 => "M622", 91 => "M632", 92 => "M702", 93 => "M712", 94 => "M722", 95 => "M732",
+        96 => "E020", 97 => "E021", 98 => "E022", 99 => "E023", 100 => "E120", 101 => "E121", 102 => "E122", 103 => "E123",
+        104 => "E220", 105 => "E221", 106 => "E222", 107 => "E223", 108 => "E320", 109 => "E321", 110 => "E322", 111 => "E323",
+        112 => "E420", 113 => "E421", 114 => "E422", 115 => "E423", 116 => "E520", 117 => "E521", 118 => "E522", 119 => "E523",
+        120 => "E620", 121 => "E621", 122 => "E622", 123 => "E623", 124 => "E720", 125 => "E721", 126 => "E722", 127 => "E723", _ => dec
+    })
+}
+
+operand vcond = u4 {
+    display(names {
+        0 => "FL", 1 => "EQ", 2 => "LT", 3 => "LE", 4 => "TR", 5 => "NE", 6 => "GE", 7 => "GT",
+        8 => "EZ", 9 => "EN", 10 => "EI", 11 => "ES", 12 => "NZ", 13 => "NN", 14 => "NI", 15 => "NS", _ => dec
+    })
+}
+
+operand vcontrol = u8 {
+    display(names {
+        128 => "SPFX", 129 => "TPFX", 130 => "DPFX", 131 => "CC", 132 => "INF4", 133 => "RSV5", 134 => "RSV6", 135 => "REV",
+        136 => "RCX0", 137 => "RCX1", 138 => "RCX2", 139 => "RCX3", 140 => "RCX4", 141 => "RCX5", 142 => "RCX6", 143 => "RCX7", _ => dec
+    })
+}
+
+# Shift
+
+sll op=0x00 [25:21]=0x0 [5:0]=0x0 rt:gpr[20:16] rd:gpr[15:11] sa:d5[10:6]
+    | "sll {rd}, {rt}, {sa}"
+
+srl op=0x00 [25:21]=0x0 [5:0]=0x2 rt:gpr[20:16] rd:gpr[15:11] sa:d5[10:6]
+    | "srl {rd}, {rt}, {sa}"
+
+rotr op=0x00 [25:21]=0x1 [5:0]=0x2 rt:gpr[20:16] rd:gpr[15:11] sa:d5[10:6]
+    | "rotr {rd}, {rt}, {sa}"
+
+sra op=0x00 [25:21]=0x0 [5:0]=0x3 rt:gpr[20:16] rd:gpr[15:11] sa:d5[10:6]
+    | "sra {rd}, {rt}, {sa}"
+
+sllv op=0x00 [10:0]=0x4 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "sllv {rd}, {rt}, {rs}"
+
+srlv op=0x00 [10:0]=0x6 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "srlv {rd}, {rt}, {rs}"
+
+rotrv op=0x00 [10:0]=0x46 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "rotrv {rd}, {rt}, {rs}"
+
+srav op=0x00 [10:0]=0x7 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "srav {rd}, {rt}, {rs}"
+
+# Arithmetic
+
+add op=0x00 [10:0]=0x20 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "add {rd}, {rs}, {rt}"
+
+addu op=0x00 [10:0]=0x21 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "addu {rd}, {rs}, {rt}"
+
+sub op=0x00 [10:0]=0x22 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "sub {rd}, {rs}, {rt}"
+
+subu op=0x00 [10:0]=0x23 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "subu {rd}, {rs}, {rt}"
+
+slt op=0x00 [10:0]=0x2a rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "slt {rd}, {rs}, {rt}"
+
+sltu op=0x00 [10:0]=0x2b rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "sltu {rd}, {rs}, {rt}"
+
+max op=0x00 [10:0]=0x2c rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "max {rd}, {rs}, {rt}"
+
+min op=0x00 [10:0]=0x2d rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "min {rd}, {rs}, {rt}"
+
+movz op=0x00 [10:0]=0xa rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "movz {rd}, {rs}, {rt}"
+
+movn op=0x00 [10:0]=0xb rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "movn {rd}, {rs}, {rt}"
+
+clz op=0x00 [20:16]=0x0 [10:0]=0x16 rs:gpr[25:21] rd:gpr[15:11]
+    | "clz {rd}, {rs}"
+
+clo op=0x00 [20:16]=0x0 [10:0]=0x17 rs:gpr[25:21] rd:gpr[15:11]
+    | "clo {rd}, {rs}"
+
+addi op=0x08 rs:gpr[25:21] rt:gpr[20:16] imm16:simm16[15:0]
+    | "addi {rt}, {rs}, {imm16}"
+
+addiu op=0x09 rs:gpr[25:21] rt:gpr[20:16] imm16:simm16[15:0]
+    | "addiu {rt}, {rs}, {imm16}"
+
+slti op=0x0a rs:gpr[25:21] rt:gpr[20:16] imm16:simm16[15:0]
+    | "slti {rt}, {rs}, {imm16}"
+
+sltiu op=0x0b rs:gpr[25:21] rt:gpr[20:16] imm16:simm16[15:0]
+    | "sltiu {rt}, {rs}, {imm16}"
+
+# Logic
+
+and op=0x00 [10:0]=0x24 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "and {rd}, {rs}, {rt}"
+
+or op=0x00 [10:0]=0x25 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "or {rd}, {rs}, {rt}"
+
+xor op=0x00 [10:0]=0x26 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "xor {rd}, {rs}, {rt}"
+
+nor op=0x00 [10:0]=0x27 rs:gpr[25:21] rt:gpr[20:16] rd:gpr[15:11]
+    | "nor {rd}, {rs}, {rt}"
+
+andi op=0x0c rs:gpr[25:21] rt:gpr[20:16] uimm:uimm16[15:0]
+    | "andi {rt}, {rs}, {uimm}"
+
+ori op=0x0d rs:gpr[25:21] rt:gpr[20:16] uimm:uimm16[15:0]
+    | "ori {rt}, {rs}, {uimm}"
+
+xori op=0x0e rs:gpr[25:21] rt:gpr[20:16] uimm:uimm16[15:0]
+    | "xori {rt}, {rs}, {uimm}"
+
+lui op=0x0f [25:21]=0x0 rt:gpr[20:16] uimm:uimm16[15:0]
+    upper:x32 = uimm << 16
+    | "lui {rt}, {uimm}"
+
+# Multiply / divide
+
+mult op=0x00 [15:0]=0x18 rs:gpr[25:21] rt:gpr[20:16]
+    | "mult {rs}, {rt}"
+
+multu op=0x00 [15:0]=0x19 rs:gpr[25:21] rt:gpr[20:16]
+    | "multu {rs}, {rt}"
+
+div op=0x00 [15:0]=0x1a rs:gpr[25:21] rt:gpr[20:16]
+    | "div {rs}, {rt}"
+
+divu op=0x00 [15:0]=0x1b rs:gpr[25:21] rt:gpr[20:16]
+    | "divu {rs}, {rt}"
+
+madd op=0x00 [15:0]=0x1c rs:gpr[25:21] rt:gpr[20:16]
+    | "madd {rs}, {rt}"
+
+maddu op=0x00 [15:0]=0x1d rs:gpr[25:21] rt:gpr[20:16]
+    | "maddu {rs}, {rt}"
+
+msub op=0x00 [15:0]=0x2e rs:gpr[25:21] rt:gpr[20:16]
+    | "msub {rs}, {rt}"
+
+msubu op=0x00 [15:0]=0x2f rs:gpr[25:21] rt:gpr[20:16]
+    | "msubu {rs}, {rt}"
+
+mfhi op=0x00 [25:16]=0x0 [10:0]=0x10 rd:gpr[15:11]
+    | "mfhi {rd}"
+
+mthi op=0x00 [20:0]=0x11 rs:gpr[25:21]
+    | "mthi {rs}"
+
+mflo op=0x00 [25:16]=0x0 [10:0]=0x12 rd:gpr[15:11]
+    | "mflo {rd}"
+
+mtlo op=0x00 [20:0]=0x13 rs:gpr[25:21]
+    | "mtlo {rs}"
+
+# Jump and branch
+
+jr op=0x00 [20:0]=0x8 rs:gpr[25:21]
+    | "jr {rs}"
+
+jalr op=0x00 [20:16]=0x0 [10:0]=0x9 rs:gpr[25:21] rd:gpr[15:11]
+    | "jalr {rd}, {rs}"
+
+j op=0x02 target:jtarget[25:0]
+    | "j {target}"
+
+jal op=0x03 target:jtarget[25:0]
+    | "jal {target}"
+
+beq op=0x04 rs:gpr[25:21] rt:gpr[20:16] offset:branch[15:0]
+    | "beq {rs}, {rt}, {offset}"
+
+bne op=0x05 rs:gpr[25:21] rt:gpr[20:16] offset:branch[15:0]
+    | "bne {rs}, {rt}, {offset}"
+
+blez op=0x06 [20:16]=0x0 rs:gpr[25:21] offset:branch[15:0]
+    | "blez {rs}, {offset}"
+
+bgtz op=0x07 [20:16]=0x0 rs:gpr[25:21] offset:branch[15:0]
+    | "bgtz {rs}, {offset}"
+
+beql op=0x14 rs:gpr[25:21] rt:gpr[20:16] offset:branch[15:0]
+    | "beql {rs}, {rt}, {offset}"
+
+bnel op=0x15 rs:gpr[25:21] rt:gpr[20:16] offset:branch[15:0]
+    | "bnel {rs}, {rt}, {offset}"
+
+blezl op=0x16 [20:16]=0x0 rs:gpr[25:21] offset:branch[15:0]
+    | "blezl {rs}, {offset}"
+
+bgtzl op=0x17 [20:16]=0x0 rs:gpr[25:21] offset:branch[15:0]
+    | "bgtzl {rs}, {offset}"
+
+bltz op=0x01 [20:16]=0x0 rs:gpr[25:21] offset:branch[15:0]
+    | "bltz {rs}, {offset}"
+
+bgez op=0x01 [20:16]=0x1 rs:gpr[25:21] offset:branch[15:0]
+    | "bgez {rs}, {offset}"
+
+bltzl op=0x01 [20:16]=0x2 rs:gpr[25:21] offset:branch[15:0]
+    | "bltzl {rs}, {offset}"
+
+bgezl op=0x01 [20:16]=0x3 rs:gpr[25:21] offset:branch[15:0]
+    | "bgezl {rs}, {offset}"
+
+bltzal op=0x01 [20:16]=0x10 rs:gpr[25:21] offset:branch[15:0]
+    | "bltzal {rs}, {offset}"
+
+bgezal op=0x01 [20:16]=0x11 rs:gpr[25:21] offset:branch[15:0]
+    | "bgezal {rs}, {offset}"
+
+bltzall op=0x01 [20:16]=0x12 rs:gpr[25:21] offset:branch[15:0]
+    | "bltzall {rs}, {offset}"
+
+bgezall op=0x01 [20:16]=0x13 rs:gpr[25:21] offset:branch[15:0]
+    | "bgezall {rs}, {offset}"
+
+# System
+
+syscall op=0x00 [5:0]=0xc code:x20[25:6]
+    | "syscall {code}"
+
+break op=0x00 [5:0]=0xd code:x20[25:6]
+    | "break {code}"
+
+sync op=0x00 [25:11]=0x0 [5:0]=0xf stype:d5[10:6]
+    | "sync {stype}"
+
+cache op=0x2f rs:gpr[25:21] cache_op:x5[20:16] disp:simm16[15:0]
+    | "cache {cache_op}, {disp}({rs})"
+
+mfc0 op=0x10 [25:21]=0x0 [10:0]=0x0 rt:gpr[20:16] rd:cop0Register[15:11]
+    | "mfc0 {rt}, {rd}"
+
+mtc0 op=0x10 [25:21]=0x4 [10:0]=0x0 rt:gpr[20:16] rd:cop0Register[15:11]
+    | "mtc0 {rt}, {rd}"
+
+eret op=0x10 [25:0]=0x2000018
+    | "eret"
+
+# Load / store
+
+lb op=0x20 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "lb {rt}, {disp}({rs})"
+
+lh op=0x21 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "lh {rt}, {disp}({rs})"
+
+lwl op=0x22 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "lwl {rt}, {disp}({rs})"
+
+lw op=0x23 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "lw {rt}, {disp}({rs})"
+
+lbu op=0x24 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "lbu {rt}, {disp}({rs})"
+
+lhu op=0x25 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "lhu {rt}, {disp}({rs})"
+
+lwr op=0x26 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "lwr {rt}, {disp}({rs})"
+
+sb op=0x28 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "sb {rt}, {disp}({rs})"
+
+sh op=0x29 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "sh {rt}, {disp}({rs})"
+
+swl op=0x2a rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "swl {rt}, {disp}({rs})"
+
+sw op=0x2b rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "sw {rt}, {disp}({rs})"
+
+swr op=0x2e rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "swr {rt}, {disp}({rs})"
+
+ll op=0x30 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "ll {rt}, {disp}({rs})"
+
+sc op=0x38 rs:gpr[25:21] rt:gpr[20:16] disp:simm16[15:0]
+    | "sc {rt}, {disp}({rs})"
+
+# Bit field
+
+ext op=0x1f [5:0]=0x0 rs:gpr[25:21] rt:gpr[20:16] size_minus_one:d5[15:11] pos:d5[10:6]
+    size:d6 = size_minus_one + 1
+    ext_mask:x32 = ones(size_minus_one + 1)
+    when pos + size_minus_one < 32
+    | "ext {rt}, {rs}, {pos}, {size}"
+
+ins op=0x1f [5:0]=0x4 rs:gpr[25:21] rt:gpr[20:16] msb:d5[15:11] pos:d5[10:6]
+    ins_size:d6 = msb - pos + 1
+    ins_mask:x32 = ones(msb + 1) ^ ones(pos)
+    when msb >= pos
+    | "ins {rt}, {rs}, {pos}, {ins_size}"
+
+seb op=0x1f [25:21]=0x0 [10:0]=0x420 rt:gpr[20:16] rd:gpr[15:11]
+    | "seb {rd}, {rt}"
+
+seh op=0x1f [25:21]=0x0 [10:0]=0x620 rt:gpr[20:16] rd:gpr[15:11]
+    | "seh {rd}, {rt}"
+
+wsbh op=0x1f [25:21]=0x0 [10:0]=0xa0 rt:gpr[20:16] rd:gpr[15:11]
+    | "wsbh {rd}, {rt}"
+
+wsbw op=0x1f [25:21]=0x0 [10:0]=0xe0 rt:gpr[20:16] rd:gpr[15:11]
+    | "wsbw {rd}, {rt}"
+
+bitrev op=0x1f [25:21]=0x0 [10:0]=0x520 rt:gpr[20:16] rd:gpr[15:11]
+    | "bitrev {rd}, {rt}"
+
+# FPU
+
+mfc1 op=0x11 [25:21]=0x0 [10:0]=0x0 rt:gpr[20:16] fs:fpr[15:11]
+    | "mfc1 {rt}, {fs}"
+
+mtc1 op=0x11 [25:21]=0x4 [10:0]=0x0 rt:gpr[20:16] fs:fpr[15:11]
+    | "mtc1 {rt}, {fs}"
+
+cfc1 op=0x11 [25:21]=0x2 [10:0]=0x0 rt:gpr[20:16] fcr:fpuControlRegister[15:11]
+    | "cfc1 {rt}, {fcr}"
+
+ctc1 op=0x11 [25:21]=0x6 [10:0]=0x0 rt:gpr[20:16] fcr:fpuControlRegister[15:11]
+    | "ctc1 {rt}, {fcr}"
+
+bc1f op=0x11 [25:16]=0x100 offset:branch[15:0]
+    | "bc1f {offset}"
+
+bc1t op=0x11 [25:16]=0x101 offset:branch[15:0]
+    | "bc1t {offset}"
+
+bc1fl op=0x11 [25:16]=0x102 offset:branch[15:0]
+    | "bc1fl {offset}"
+
+bc1tl op=0x11 [25:16]=0x103 offset:branch[15:0]
+    | "bc1tl {offset}"
+
+add_s op=0x11 [25:21]=0x10 [5:0]=0x0 ft:fpr[20:16] fs:fpr[15:11] fd:fpr[10:6]
+    | "add.s {fd}, {fs}, {ft}"
+
+sub_s op=0x11 [25:21]=0x10 [5:0]=0x1 ft:fpr[20:16] fs:fpr[15:11] fd:fpr[10:6]
+    | "sub.s {fd}, {fs}, {ft}"
+
+mul_s op=0x11 [25:21]=0x10 [5:0]=0x2 ft:fpr[20:16] fs:fpr[15:11] fd:fpr[10:6]
+    | "mul.s {fd}, {fs}, {ft}"
+
+div_s op=0x11 [25:21]=0x10 [5:0]=0x3 ft:fpr[20:16] fs:fpr[15:11] fd:fpr[10:6]
+    | "div.s {fd}, {fs}, {ft}"
+
+sqrt_s op=0x11 [25:16]=0x200 [5:0]=0x4 fs:fpr[15:11] fd:fpr[10:6]
+    | "sqrt.s {fd}, {fs}"
+
+abs_s op=0x11 [25:16]=0x200 [5:0]=0x5 fs:fpr[15:11] fd:fpr[10:6]
+    | "abs.s {fd}, {fs}"
+
+mov_s op=0x11 [25:16]=0x200 [5:0]=0x6 fs:fpr[15:11] fd:fpr[10:6]
+    | "mov.s {fd}, {fs}"
+
+neg_s op=0x11 [25:16]=0x200 [5:0]=0x7 fs:fpr[15:11] fd:fpr[10:6]
+    | "neg.s {fd}, {fs}"
+
+round_w_s op=0x11 [25:16]=0x200 [5:0]=0xc fs:fpr[15:11] fd:fpr[10:6]
+    | "round.w.s {fd}, {fs}"
+
+trunc_w_s op=0x11 [25:16]=0x200 [5:0]=0xd fs:fpr[15:11] fd:fpr[10:6]
+    | "trunc.w.s {fd}, {fs}"
+
+ceil_w_s op=0x11 [25:16]=0x200 [5:0]=0xe fs:fpr[15:11] fd:fpr[10:6]
+    | "ceil.w.s {fd}, {fs}"
+
+floor_w_s op=0x11 [25:16]=0x200 [5:0]=0xf fs:fpr[15:11] fd:fpr[10:6]
+    | "floor.w.s {fd}, {fs}"
+
+cvt_w_s op=0x11 [25:16]=0x200 [5:0]=0x24 fs:fpr[15:11] fd:fpr[10:6]
+    | "cvt.w.s {fd}, {fs}"
+
+cvt_s_w op=0x11 [25:16]=0x280 [5:0]=0x20 fs:fpr[15:11] fd:fpr[10:6]
+    | "cvt.s.w {fd}, {fs}"
+
+c_f_s op=0x11 [25:21]=0x10 [10:0]=0x30 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.f.s {fs}, {ft}"
+
+c_un_s op=0x11 [25:21]=0x10 [10:0]=0x31 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.un.s {fs}, {ft}"
+
+c_eq_s op=0x11 [25:21]=0x10 [10:0]=0x32 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.eq.s {fs}, {ft}"
+
+c_ueq_s op=0x11 [25:21]=0x10 [10:0]=0x33 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.ueq.s {fs}, {ft}"
+
+c_olt_s op=0x11 [25:21]=0x10 [10:0]=0x34 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.olt.s {fs}, {ft}"
+
+c_ult_s op=0x11 [25:21]=0x10 [10:0]=0x35 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.ult.s {fs}, {ft}"
+
+c_ole_s op=0x11 [25:21]=0x10 [10:0]=0x36 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.ole.s {fs}, {ft}"
+
+c_ule_s op=0x11 [25:21]=0x10 [10:0]=0x37 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.ule.s {fs}, {ft}"
+
+c_sf_s op=0x11 [25:21]=0x10 [10:0]=0x38 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.sf.s {fs}, {ft}"
+
+c_ngle_s op=0x11 [25:21]=0x10 [10:0]=0x39 ft:fpr[20:16] fs:fpr[15:11]
+    | "c.ngle.s {fs}, {ft}"
+
+c_seq_s op=0x11 [25:21]=0x10 [10:0]=0x3a ft:fpr[20:16] fs:fpr[15:11]
+    | "c.seq.s {fs}, {ft}"
+
+c_ngl_s op=0x11 [25:21]=0x10 [10:0]=0x3b ft:fpr[20:16] fs:fpr[15:11]
+    | "c.ngl.s {fs}, {ft}"
+
+c_lt_s op=0x11 [25:21]=0x10 [10:0]=0x3c ft:fpr[20:16] fs:fpr[15:11]
+    | "c.lt.s {fs}, {ft}"
+
+c_nge_s op=0x11 [25:21]=0x10 [10:0]=0x3d ft:fpr[20:16] fs:fpr[15:11]
+    | "c.nge.s {fs}, {ft}"
+
+c_le_s op=0x11 [25:21]=0x10 [10:0]=0x3e ft:fpr[20:16] fs:fpr[15:11]
+    | "c.le.s {fs}, {ft}"
+
+c_ngt_s op=0x11 [25:21]=0x10 [10:0]=0x3f ft:fpr[20:16] fs:fpr[15:11]
+    | "c.ngt.s {fs}, {ft}"
+
+lwc1 op=0x31 rs:gpr[25:21] ft:fpr[20:16] disp:simm16[15:0]
+    | "lwc1 {ft}, {disp}({rs})"
+
+swc1 op=0x39 rs:gpr[25:21] ft:fpr[20:16] disp:simm16[15:0]
+    | "swc1 {ft}, {disp}({rs})"
+
+# PSP system and debug instructions
+
+halt op=0x1c [25:0]=0x0
+    | "halt"
+
+dret op=0x1c [25:0]=0x3e
+    | "dret"
+
+dbreak op=0x1c [25:0]=0x3f
+    | "dbreak"
+
+cfc0 op=0x10 [25:21]=0x2 [10:0]=0x0 rt:gpr[20:16] rd:cop0Register[15:11]
+    | "cfc0 {rt}, {rd}"
+
+ctc0 op=0x10 [25:21]=0x6 [10:0]=0x0 rt:gpr[20:16] rd:cop0Register[15:11]
+    | "ctc0 {rt}, {rd}"
+
+mfic op=0x1c [25:21]=0x0 [10:0]=0x24 rt:gpr[20:16] rd:cop0Register[15:11]
+    | "mfic {rt}, {rd}"
+
+mtic op=0x1c [25:21]=0x0 [10:0]=0x26 rt:gpr[20:16] rd:cop0Register[15:11]
+    | "mtic {rt}, {rd}"
+
+mfdr op=0x1c [25:21]=0x0 [10:0]=0x3d rt:gpr[20:16] rd:debug_reg[15:11]
+    | "mfdr {rt}, {rd}"
+
+mtdr op=0x1c [25:21]=0x4 [10:0]=0x3d rt:gpr[20:16] rd:debug_reg[15:11]
+    | "mtdr {rt}, {rd}"
+
+# VFPU arithmetic
+
+vadd_s op=0x18 [25:23]=0x0 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vadd.s {vd}, {vs}, {vt}"
+
+vadd_p op=0x18 [25:23]=0x0 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vadd.p {vd}, {vs}, {vt}"
+
+vadd_t op=0x18 [25:23]=0x0 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vadd.t {vd}, {vs}, {vt}"
+
+vadd_q op=0x18 [25:23]=0x0 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vadd.q {vd}, {vs}, {vt}"
+
+vsub_s op=0x18 [25:23]=0x1 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vsub.s {vd}, {vs}, {vt}"
+
+vsub_p op=0x18 [25:23]=0x1 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vsub.p {vd}, {vs}, {vt}"
+
+vsub_t op=0x18 [25:23]=0x1 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vsub.t {vd}, {vs}, {vt}"
+
+vsub_q op=0x18 [25:23]=0x1 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vsub.q {vd}, {vs}, {vt}"
+
+vsbn_s op=0x18 [25:23]=0x2 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vsbn.s {vd}, {vs}, {vt}"
+
+vdiv_s op=0x18 [25:23]=0x7 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vdiv.s {vd}, {vs}, {vt}"
+
+vdiv_p op=0x18 [25:23]=0x7 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vdiv.p {vd}, {vs}, {vt}"
+
+vdiv_t op=0x18 [25:23]=0x7 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vdiv.t {vd}, {vs}, {vt}"
+
+vdiv_q op=0x18 [25:23]=0x7 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vdiv.q {vd}, {vs}, {vt}"
+
+vmul_s op=0x19 [25:23]=0x0 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vmul.s {vd}, {vs}, {vt}"
+
+vmul_p op=0x19 [25:23]=0x0 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vmul.p {vd}, {vs}, {vt}"
+
+vmul_t op=0x19 [25:23]=0x0 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vmul.t {vd}, {vs}, {vt}"
+
+vmul_q op=0x19 [25:23]=0x0 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vmul.q {vd}, {vs}, {vt}"
+
+vdot_p op=0x19 [25:23]=0x1 [15]=0x0 [7]=0x1 vd:v1[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vdot.p {vd}, {vs}, {vt}"
+
+vdot_t op=0x19 [25:23]=0x1 [15]=0x1 [7]=0x0 vd:v1[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vdot.t {vd}, {vs}, {vt}"
+
+vdot_q op=0x19 [25:23]=0x1 [15]=0x1 [7]=0x1 vd:v1[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vdot.q {vd}, {vs}, {vt}"
+
+vscl_p op=0x19 [25:23]=0x2 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:v1[22:16]
+    | "vscl.p {vd}, {vs}, {vt}"
+
+vscl_t op=0x19 [25:23]=0x2 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v1[22:16]
+    | "vscl.t {vd}, {vs}, {vt}"
+
+vscl_q op=0x19 [25:23]=0x2 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:v1[22:16]
+    | "vscl.q {vd}, {vs}, {vt}"
+
+vhdp_p op=0x19 [25:23]=0x4 [15]=0x0 [7]=0x1 vd:v1[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vhdp.p {vd}, {vs}, {vt}"
+
+vhdp_t op=0x19 [25:23]=0x4 [15]=0x1 [7]=0x0 vd:v1[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vhdp.t {vd}, {vs}, {vt}"
+
+vhdp_q op=0x19 [25:23]=0x4 [15]=0x1 [7]=0x1 vd:v1[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vhdp.q {vd}, {vs}, {vt}"
+
+vcrs_t op=0x19 [25:23]=0x5 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vcrs.t {vd}, {vs}, {vt}"
+
+vdet_p op=0x19 [25:23]=0x6 [15]=0x0 [7]=0x1 vd:v1[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vdet.p {vd}, {vs}, {vt}"
+
+vmin_s op=0x1b [25:23]=0x2 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vmin.s {vd}, {vs}, {vt}"
+
+vmin_p op=0x1b [25:23]=0x2 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vmin.p {vd}, {vs}, {vt}"
+
+vmin_t op=0x1b [25:23]=0x2 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vmin.t {vd}, {vs}, {vt}"
+
+vmin_q op=0x1b [25:23]=0x2 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vmin.q {vd}, {vs}, {vt}"
+
+vmax_s op=0x1b [25:23]=0x3 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vmax.s {vd}, {vs}, {vt}"
+
+vmax_p op=0x1b [25:23]=0x3 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vmax.p {vd}, {vs}, {vt}"
+
+vmax_t op=0x1b [25:23]=0x3 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vmax.t {vd}, {vs}, {vt}"
+
+vmax_q op=0x1b [25:23]=0x3 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vmax.q {vd}, {vs}, {vt}"
+
+vscmp_s op=0x1b [25:23]=0x5 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vscmp.s {vd}, {vs}, {vt}"
+
+vscmp_p op=0x1b [25:23]=0x5 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vscmp.p {vd}, {vs}, {vt}"
+
+vscmp_t op=0x1b [25:23]=0x5 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vscmp.t {vd}, {vs}, {vt}"
+
+vscmp_q op=0x1b [25:23]=0x5 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vscmp.q {vd}, {vs}, {vt}"
+
+vsge_s op=0x1b [25:23]=0x6 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vsge.s {vd}, {vs}, {vt}"
+
+vsge_p op=0x1b [25:23]=0x6 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vsge.p {vd}, {vs}, {vt}"
+
+vsge_t op=0x1b [25:23]=0x6 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vsge.t {vd}, {vs}, {vt}"
+
+vsge_q op=0x1b [25:23]=0x6 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vsge.q {vd}, {vs}, {vt}"
+
+vslt_s op=0x1b [25:23]=0x7 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] vt:v1[22:16]
+    | "vslt.s {vd}, {vs}, {vt}"
+
+vslt_p op=0x1b [25:23]=0x7 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vslt.p {vd}, {vs}, {vt}"
+
+vslt_t op=0x1b [25:23]=0x7 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vslt.t {vd}, {vs}, {vt}"
+
+vslt_q op=0x1b [25:23]=0x7 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vslt.q {vd}, {vs}, {vt}"
+
+vmmul_p op=0x3c [25:23]=0x0 [15]=0x0 [7]=0x1 vd:mpq[6:0] vs:mpq[14:8] vt:mpq[22:16]
+    vs_tr:mpq = vs ^ 0x20
+    | "vmmul.p {vd}, {vs_tr}, {vt}"
+
+vmmul_t op=0x3c [25:23]=0x0 [15]=0x1 [7]=0x0 vd:m3[6:0] vs:m3[14:8] vt:m3[22:16]
+    vs_tr:m3 = vs ^ 0x20
+    | "vmmul.t {vd}, {vs_tr}, {vt}"
+
+vmmul_q op=0x3c [25:23]=0x0 [15]=0x1 [7]=0x1 vd:mpq[6:0] vs:mpq[14:8] vt:mpq[22:16]
+    vs_tr:mpq = vs ^ 0x20
+    | "vmmul.q {vd}, {vs_tr}, {vt}"
+
+vmscl_p op=0x3c [25:23]=0x4 [15]=0x0 [7]=0x1 vd:mpq[6:0] vs:mpq[14:8] vt:v1[22:16]
+    | "vmscl.p {vd}, {vs}, {vt}"
+
+vmscl_t op=0x3c [25:23]=0x4 [15]=0x1 [7]=0x0 vd:m3[6:0] vs:m3[14:8] vt:v1[22:16]
+    | "vmscl.t {vd}, {vs}, {vt}"
+
+vmscl_q op=0x3c [25:23]=0x4 [15]=0x1 [7]=0x1 vd:mpq[6:0] vs:mpq[14:8] vt:v1[22:16]
+    | "vmscl.q {vd}, {vs}, {vt}"
+
+vcrsp_t op=0x3c [25:23]=0x5 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] vt:v3[22:16]
+    | "vcrsp.t {vd}, {vs}, {vt}"
+
+vqmul_q op=0x3c [25:23]=0x5 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vqmul.q {vd}, {vs}, {vt}"
+
+vmov_s op=0x34 [25:15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vmov.s {vd}, {vs}"
+
+vmov_p op=0x34 [25:15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vmov.p {vd}, {vs}"
+
+vmov_t op=0x34 [25:15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vmov.t {vd}, {vs}"
+
+vmov_q op=0x34 [25:15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vmov.q {vd}, {vs}"
+
+vabs_s op=0x34 [25:15]=0x2 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vabs.s {vd}, {vs}"
+
+vabs_p op=0x34 [25:15]=0x2 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vabs.p {vd}, {vs}"
+
+vabs_t op=0x34 [25:15]=0x3 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vabs.t {vd}, {vs}"
+
+vabs_q op=0x34 [25:15]=0x3 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vabs.q {vd}, {vs}"
+
+vneg_s op=0x34 [25:15]=0x4 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vneg.s {vd}, {vs}"
+
+vneg_p op=0x34 [25:15]=0x4 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vneg.p {vd}, {vs}"
+
+vneg_t op=0x34 [25:15]=0x5 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vneg.t {vd}, {vs}"
+
+vneg_q op=0x34 [25:15]=0x5 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vneg.q {vd}, {vs}"
+
+vsat0_s op=0x34 [25:15]=0x8 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vsat0.s {vd}, {vs}"
+
+vsat0_p op=0x34 [25:15]=0x8 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsat0.p {vd}, {vs}"
+
+vsat0_t op=0x34 [25:15]=0x9 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vsat0.t {vd}, {vs}"
+
+vsat0_q op=0x34 [25:15]=0x9 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsat0.q {vd}, {vs}"
+
+vsat1_s op=0x34 [25:15]=0xa [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vsat1.s {vd}, {vs}"
+
+vsat1_p op=0x34 [25:15]=0xa [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsat1.p {vd}, {vs}"
+
+vsat1_t op=0x34 [25:15]=0xb [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vsat1.t {vd}, {vs}"
+
+vsat1_q op=0x34 [25:15]=0xb [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsat1.q {vd}, {vs}"
+
+vrcp_s op=0x34 [25:15]=0x20 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vrcp.s {vd}, {vs}"
+
+vrcp_p op=0x34 [25:15]=0x20 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vrcp.p {vd}, {vs}"
+
+vrcp_t op=0x34 [25:15]=0x21 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vrcp.t {vd}, {vs}"
+
+vrcp_q op=0x34 [25:15]=0x21 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vrcp.q {vd}, {vs}"
+
+vrsq_s op=0x34 [25:15]=0x22 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vrsq.s {vd}, {vs}"
+
+vrsq_p op=0x34 [25:15]=0x22 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vrsq.p {vd}, {vs}"
+
+vrsq_t op=0x34 [25:15]=0x23 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vrsq.t {vd}, {vs}"
+
+vrsq_q op=0x34 [25:15]=0x23 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vrsq.q {vd}, {vs}"
+
+vsin_s op=0x34 [25:15]=0x24 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vsin.s {vd}, {vs}"
+
+vsin_p op=0x34 [25:15]=0x24 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsin.p {vd}, {vs}"
+
+vsin_t op=0x34 [25:15]=0x25 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vsin.t {vd}, {vs}"
+
+vsin_q op=0x34 [25:15]=0x25 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsin.q {vd}, {vs}"
+
+vcos_s op=0x34 [25:15]=0x26 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vcos.s {vd}, {vs}"
+
+vcos_p op=0x34 [25:15]=0x26 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vcos.p {vd}, {vs}"
+
+vcos_t op=0x34 [25:15]=0x27 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vcos.t {vd}, {vs}"
+
+vcos_q op=0x34 [25:15]=0x27 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vcos.q {vd}, {vs}"
+
+vexp2_s op=0x34 [25:15]=0x28 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vexp2.s {vd}, {vs}"
+
+vexp2_p op=0x34 [25:15]=0x28 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vexp2.p {vd}, {vs}"
+
+vexp2_t op=0x34 [25:15]=0x29 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vexp2.t {vd}, {vs}"
+
+vexp2_q op=0x34 [25:15]=0x29 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vexp2.q {vd}, {vs}"
+
+vlog2_s op=0x34 [25:15]=0x2a [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vlog2.s {vd}, {vs}"
+
+vlog2_p op=0x34 [25:15]=0x2a [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vlog2.p {vd}, {vs}"
+
+vlog2_t op=0x34 [25:15]=0x2b [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vlog2.t {vd}, {vs}"
+
+vlog2_q op=0x34 [25:15]=0x2b [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vlog2.q {vd}, {vs}"
+
+vsqrt_s op=0x34 [25:15]=0x2c [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vsqrt.s {vd}, {vs}"
+
+vsqrt_p op=0x34 [25:15]=0x2c [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsqrt.p {vd}, {vs}"
+
+vsqrt_t op=0x34 [25:15]=0x2d [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vsqrt.t {vd}, {vs}"
+
+vsqrt_q op=0x34 [25:15]=0x2d [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsqrt.q {vd}, {vs}"
+
+vasin_s op=0x34 [25:15]=0x2e [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vasin.s {vd}, {vs}"
+
+vasin_p op=0x34 [25:15]=0x2e [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vasin.p {vd}, {vs}"
+
+vasin_t op=0x34 [25:15]=0x2f [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vasin.t {vd}, {vs}"
+
+vasin_q op=0x34 [25:15]=0x2f [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vasin.q {vd}, {vs}"
+
+vnrcp_s op=0x34 [25:15]=0x30 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vnrcp.s {vd}, {vs}"
+
+vnrcp_p op=0x34 [25:15]=0x30 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vnrcp.p {vd}, {vs}"
+
+vnrcp_t op=0x34 [25:15]=0x31 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vnrcp.t {vd}, {vs}"
+
+vnrcp_q op=0x34 [25:15]=0x31 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vnrcp.q {vd}, {vs}"
+
+vnsin_s op=0x34 [25:15]=0x34 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vnsin.s {vd}, {vs}"
+
+vnsin_p op=0x34 [25:15]=0x34 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vnsin.p {vd}, {vs}"
+
+vnsin_t op=0x34 [25:15]=0x35 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vnsin.t {vd}, {vs}"
+
+vnsin_q op=0x34 [25:15]=0x35 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vnsin.q {vd}, {vs}"
+
+vrexp2_s op=0x34 [25:15]=0x38 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vrexp2.s {vd}, {vs}"
+
+vrexp2_p op=0x34 [25:15]=0x38 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vrexp2.p {vd}, {vs}"
+
+vrexp2_t op=0x34 [25:15]=0x39 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vrexp2.t {vd}, {vs}"
+
+vrexp2_q op=0x34 [25:15]=0x39 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vrexp2.q {vd}, {vs}"
+
+vsbz_s op=0x34 [25:15]=0x6c [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vsbz.s {vd}, {vs}"
+
+vlgb_s op=0x34 [25:15]=0x6e [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vlgb.s {vd}, {vs}"
+
+vuc2ifs_s op=0x34 [25:15]=0x70 [7]=0x0 vd:vpq[6:0] vs:v1[14:8]
+    | "vuc2ifs.s {vd}, {vs}"
+
+vc2i_s op=0x34 [25:15]=0x72 [7]=0x0 vd:vpq[6:0] vs:v1[14:8]
+    | "vc2i.s {vd}, {vs}"
+
+vi2uc_q op=0x34 [25:15]=0x79 [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vi2uc.q {vd}, {vs}"
+
+vi2c_q op=0x34 [25:15]=0x7b [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vi2c.q {vd}, {vs}"
+
+vsrt1_q op=0x34 [25:15]=0x81 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsrt1.q {vd}, {vs}"
+
+vsrt2_q op=0x34 [25:15]=0x83 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsrt2.q {vd}, {vs}"
+
+vbfy1_p op=0x34 [25:15]=0x84 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vbfy1.p {vd}, {vs}"
+
+vbfy1_q op=0x34 [25:15]=0x85 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vbfy1.q {vd}, {vs}"
+
+vbfy2_q op=0x34 [25:15]=0x87 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vbfy2.q {vd}, {vs}"
+
+vocp_s op=0x34 [25:15]=0x88 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vocp.s {vd}, {vs}"
+
+vocp_p op=0x34 [25:15]=0x88 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vocp.p {vd}, {vs}"
+
+vocp_t op=0x34 [25:15]=0x89 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vocp.t {vd}, {vs}"
+
+vocp_q op=0x34 [25:15]=0x89 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vocp.q {vd}, {vs}"
+
+vfad_p op=0x34 [25:15]=0x8c [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vfad.p {vd}, {vs}"
+
+vfad_t op=0x34 [25:15]=0x8d [7]=0x0 vd:v1[6:0] vs:v3[14:8]
+    | "vfad.t {vd}, {vs}"
+
+vfad_q op=0x34 [25:15]=0x8d [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vfad.q {vd}, {vs}"
+
+vavg_p op=0x34 [25:15]=0x8e [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vavg.p {vd}, {vs}"
+
+vavg_t op=0x34 [25:15]=0x8f [7]=0x0 vd:v1[6:0] vs:v3[14:8]
+    | "vavg.t {vd}, {vs}"
+
+vavg_q op=0x34 [25:15]=0x8f [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vavg.q {vd}, {vs}"
+
+vsrt3_q op=0x34 [25:15]=0x91 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsrt3.q {vd}, {vs}"
+
+vsrt4_q op=0x34 [25:15]=0x93 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsrt4.q {vd}, {vs}"
+
+vsgn_s op=0x34 [25:15]=0x94 [7]=0x0 vd:v1[6:0] vs:v1[14:8]
+    | "vsgn.s {vd}, {vs}"
+
+vsgn_p op=0x34 [25:15]=0x94 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsgn.p {vd}, {vs}"
+
+vsgn_t op=0x34 [25:15]=0x95 [7]=0x0 vd:v3[6:0] vs:v3[14:8]
+    | "vsgn.t {vd}, {vs}"
+
+vsgn_q op=0x34 [25:15]=0x95 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsgn.q {vd}, {vs}"
+
+vt4444_q op=0x34 [25:15]=0xb3 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vt4444.q {vd}, {vs}"
+
+vt5551_q op=0x34 [25:15]=0xb5 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vt5551.q {vd}, {vs}"
+
+vt5650_q op=0x34 [25:15]=0xb7 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vt5650.q {vd}, {vs}"
+
+vf2h_p op=0x34 [25:15]=0x64 [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vf2h.p {vd}, {vs}"
+
+vf2h_q op=0x34 [25:15]=0x65 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vf2h.q {vd}, {vs}"
+
+vh2f_s op=0x34 [25:15]=0x66 [7]=0x0 vd:vpq[6:0] vs:v1[14:8]
+    | "vh2f.s {vd}, {vs}"
+
+vh2f_p op=0x34 [25:15]=0x66 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vh2f.p {vd}, {vs}"
+
+vus2i_s op=0x34 [25:15]=0x74 [7]=0x0 vd:vpq[6:0] vs:v1[14:8]
+    | "vus2i.s {vd}, {vs}"
+
+vus2i_p op=0x34 [25:15]=0x74 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vus2i.p {vd}, {vs}"
+
+vs2i_s op=0x34 [25:15]=0x76 [7]=0x0 vd:vpq[6:0] vs:v1[14:8]
+    | "vs2i.s {vd}, {vs}"
+
+vs2i_p op=0x34 [25:15]=0x76 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vs2i.p {vd}, {vs}"
+
+vi2us_p op=0x34 [25:15]=0x7c [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vi2us.p {vd}, {vs}"
+
+vi2us_q op=0x34 [25:15]=0x7d [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vi2us.q {vd}, {vs}"
+
+vi2s_p op=0x34 [25:15]=0x7e [7]=0x1 vd:v1[6:0] vs:vpq[14:8]
+    | "vi2s.p {vd}, {vs}"
+
+vi2s_q op=0x34 [25:15]=0x7f [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vi2s.q {vd}, {vs}"
+
+vsocp_s op=0x34 [25:15]=0x8a [7]=0x0 vd:vpq[6:0] vs:v1[14:8]
+    | "vsocp.s {vd}, {vs}"
+
+vsocp_p op=0x34 [25:15]=0x8a [7]=0x1 vd:vpq[6:0] vs:vpq[14:8]
+    | "vsocp.p {vd}, {vs}"
+
+vidt_p op=0x34 [25:7]=0x601 vd:vpq[6:0]
+    | "vidt.p {vd}"
+
+vidt_q op=0x34 [25:7]=0x701 vd:vpq[6:0]
+    | "vidt.q {vd}"
+
+vzero_s op=0x34 [25:7]=0xc00 vd:v1[6:0]
+    | "vzero.s {vd}"
+
+vzero_p op=0x34 [25:7]=0xc01 vd:vpq[6:0]
+    | "vzero.p {vd}"
+
+vzero_t op=0x34 [25:7]=0xd00 vd:v3[6:0]
+    | "vzero.t {vd}"
+
+vzero_q op=0x34 [25:7]=0xd01 vd:vpq[6:0]
+    | "vzero.q {vd}"
+
+vone_s op=0x34 [25:7]=0xe00 vd:v1[6:0]
+    | "vone.s {vd}"
+
+vone_p op=0x34 [25:7]=0xe01 vd:vpq[6:0]
+    | "vone.p {vd}"
+
+vone_t op=0x34 [25:7]=0xf00 vd:v3[6:0]
+    | "vone.t {vd}"
+
+vone_q op=0x34 [25:7]=0xf01 vd:vpq[6:0]
+    | "vone.q {vd}"
+
+vrndi_s op=0x34 [25:7]=0x4200 vd:v1[6:0]
+    | "vrndi.s {vd}"
+
+vrndi_p op=0x34 [25:7]=0x4201 vd:vpq[6:0]
+    | "vrndi.p {vd}"
+
+vrndi_t op=0x34 [25:7]=0x4300 vd:v3[6:0]
+    | "vrndi.t {vd}"
+
+vrndi_q op=0x34 [25:7]=0x4301 vd:vpq[6:0]
+    | "vrndi.q {vd}"
+
+vrndf1_s op=0x34 [25:7]=0x4400 vd:v1[6:0]
+    | "vrndf1.s {vd}"
+
+vrndf1_p op=0x34 [25:7]=0x4401 vd:vpq[6:0]
+    | "vrndf1.p {vd}"
+
+vrndf1_t op=0x34 [25:7]=0x4500 vd:v3[6:0]
+    | "vrndf1.t {vd}"
+
+vrndf1_q op=0x34 [25:7]=0x4501 vd:vpq[6:0]
+    | "vrndf1.q {vd}"
+
+vrndf2_s op=0x34 [25:7]=0x4600 vd:v1[6:0]
+    | "vrndf2.s {vd}"
+
+vrndf2_p op=0x34 [25:7]=0x4601 vd:vpq[6:0]
+    | "vrndf2.p {vd}"
+
+vrndf2_t op=0x34 [25:7]=0x4700 vd:v3[6:0]
+    | "vrndf2.t {vd}"
+
+vrndf2_q op=0x34 [25:7]=0x4701 vd:vpq[6:0]
+    | "vrndf2.q {vd}"
+
+vmidt_p op=0x3c [25:7]=0x70601 vd:mpq[6:0]
+    | "vmidt.p {vd}"
+
+vmidt_t op=0x3c [25:7]=0x70700 vd:m3[6:0]
+    | "vmidt.t {vd}"
+
+vmidt_q op=0x3c [25:7]=0x70701 vd:mpq[6:0]
+    | "vmidt.q {vd}"
+
+vmzero_p op=0x3c [25:7]=0x70c01 vd:mpq[6:0]
+    | "vmzero.p {vd}"
+
+vmzero_t op=0x3c [25:7]=0x70d00 vd:m3[6:0]
+    | "vmzero.t {vd}"
+
+vmzero_q op=0x3c [25:7]=0x70d01 vd:mpq[6:0]
+    | "vmzero.q {vd}"
+
+vmone_p op=0x3c [25:7]=0x70e01 vd:mpq[6:0]
+    | "vmone.p {vd}"
+
+vmone_t op=0x3c [25:7]=0x70f00 vd:m3[6:0]
+    | "vmone.t {vd}"
+
+vmone_q op=0x3c [25:7]=0x70f01 vd:mpq[6:0]
+    | "vmone.q {vd}"
+
+vrnds_s op=0x34 [25:15]=0x40 [7:0]=0x0 vs:v1[14:8]
+    | "vrnds.s {vs}"
+
+vmmov_p op=0x3c [25:15]=0x700 [7]=0x1 vd:mpq[6:0] vs:mpq[14:8]
+    | "vmmov.p {vd}, {vs}"
+
+vmmov_t op=0x3c [25:15]=0x701 [7]=0x0 vd:m3[6:0] vs:m3[14:8]
+    | "vmmov.t {vd}, {vs}"
+
+vmmov_q op=0x3c [25:15]=0x701 [7]=0x1 vd:mpq[6:0] vs:mpq[14:8]
+    | "vmmov.q {vd}, {vs}"
+
+vf2in_s op=0x34 [25:21]=0x10 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] scale:d5[20:16]
+    | "vf2in.s {vd}, {vs}, {scale}"
+
+vf2in_p op=0x34 [25:21]=0x10 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2in.p {vd}, {vs}, {scale}"
+
+vf2in_t op=0x34 [25:21]=0x10 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] scale:d5[20:16]
+    | "vf2in.t {vd}, {vs}, {scale}"
+
+vf2in_q op=0x34 [25:21]=0x10 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2in.q {vd}, {vs}, {scale}"
+
+vf2iz_s op=0x34 [25:21]=0x11 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] scale:d5[20:16]
+    | "vf2iz.s {vd}, {vs}, {scale}"
+
+vf2iz_p op=0x34 [25:21]=0x11 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2iz.p {vd}, {vs}, {scale}"
+
+vf2iz_t op=0x34 [25:21]=0x11 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] scale:d5[20:16]
+    | "vf2iz.t {vd}, {vs}, {scale}"
+
+vf2iz_q op=0x34 [25:21]=0x11 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2iz.q {vd}, {vs}, {scale}"
+
+vf2iu_s op=0x34 [25:21]=0x12 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] scale:d5[20:16]
+    | "vf2iu.s {vd}, {vs}, {scale}"
+
+vf2iu_p op=0x34 [25:21]=0x12 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2iu.p {vd}, {vs}, {scale}"
+
+vf2iu_t op=0x34 [25:21]=0x12 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] scale:d5[20:16]
+    | "vf2iu.t {vd}, {vs}, {scale}"
+
+vf2iu_q op=0x34 [25:21]=0x12 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2iu.q {vd}, {vs}, {scale}"
+
+vf2id_s op=0x34 [25:21]=0x13 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] scale:d5[20:16]
+    | "vf2id.s {vd}, {vs}, {scale}"
+
+vf2id_p op=0x34 [25:21]=0x13 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2id.p {vd}, {vs}, {scale}"
+
+vf2id_t op=0x34 [25:21]=0x13 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] scale:d5[20:16]
+    | "vf2id.t {vd}, {vs}, {scale}"
+
+vf2id_q op=0x34 [25:21]=0x13 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vf2id.q {vd}, {vs}, {scale}"
+
+vi2f_s op=0x34 [25:21]=0x14 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] scale:d5[20:16]
+    | "vi2f.s {vd}, {vs}, {scale}"
+
+vi2f_p op=0x34 [25:21]=0x14 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vi2f.p {vd}, {vs}, {scale}"
+
+vi2f_t op=0x34 [25:21]=0x14 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] scale:d5[20:16]
+    | "vi2f.t {vd}, {vs}, {scale}"
+
+vi2f_q op=0x34 [25:21]=0x14 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] scale:d5[20:16]
+    | "vi2f.q {vd}, {vs}, {scale}"
+
+vwbn_s op=0x34 [25:24]=0x3 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] imm:d8[23:16]
+    | "vwbn.s {vd}, {vs}, {imm}"
+
+vrot_p op=0x3c [25:21]=0x1d [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:v1[14:8] rotation:d5[20:16]
+    | "vrot.p {vd}, {vs}, {rotation}"
+
+vrot_t op=0x3c [25:21]=0x1d [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v1[14:8] rotation:d5[20:16]
+    | "vrot.t {vd}, {vs}, {rotation}"
+
+vrot_q op=0x3c [25:21]=0x1d [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:v1[14:8] rotation:d5[20:16]
+    | "vrot.q {vd}, {vs}, {rotation}"
+
+vcmovt_s op=0x34 [25:19]=0x54 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] cc:d3[18:16]
+    | "vcmovt.s {vd}, {vs}, {cc}"
+
+vcmovt_p op=0x34 [25:19]=0x54 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] cc:d3[18:16]
+    | "vcmovt.p {vd}, {vs}, {cc}"
+
+vcmovt_t op=0x34 [25:19]=0x54 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] cc:d3[18:16]
+    | "vcmovt.t {vd}, {vs}, {cc}"
+
+vcmovt_q op=0x34 [25:19]=0x54 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] cc:d3[18:16]
+    | "vcmovt.q {vd}, {vs}, {cc}"
+
+vcmovf_s op=0x34 [25:19]=0x55 [15]=0x0 [7]=0x0 vd:v1[6:0] vs:v1[14:8] cc:d3[18:16]
+    | "vcmovf.s {vd}, {vs}, {cc}"
+
+vcmovf_p op=0x34 [25:19]=0x55 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] cc:d3[18:16]
+    | "vcmovf.p {vd}, {vs}, {cc}"
+
+vcmovf_t op=0x34 [25:19]=0x55 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:v3[14:8] cc:d3[18:16]
+    | "vcmovf.t {vd}, {vs}, {cc}"
+
+vcmovf_q op=0x34 [25:19]=0x55 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:vpq[14:8] cc:d3[18:16]
+    | "vcmovf.q {vd}, {vs}, {cc}"
+
+vcmp_s op=0x1b [25:23]=0x0 [15]=0x0 [7:4]=0x0 cond:vcond[3:0] vs:v1[14:8] vt:v1[22:16]
+    | "vcmp.s {cond}, {vs}, {vt}"
+
+vcst_s op=0x34 [25:21]=0x3 [15:7]=0x0 vd:v1[6:0] constant:d5[20:16]
+    | "vcst.s {vd}, {constant}"
+
+vcmp_p op=0x1b [25:23]=0x0 [15]=0x0 [7:4]=0x8 cond:vcond[3:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vcmp.p {cond}, {vs}, {vt}"
+
+vcst_p op=0x34 [25:21]=0x3 [15:7]=0x1 vd:vpq[6:0] constant:d5[20:16]
+    | "vcst.p {vd}, {constant}"
+
+vcmp_t op=0x1b [25:23]=0x0 [15]=0x1 [7:4]=0x0 cond:vcond[3:0] vs:v3[14:8] vt:v3[22:16]
+    | "vcmp.t {cond}, {vs}, {vt}"
+
+vcst_t op=0x34 [25:21]=0x3 [15:7]=0x100 vd:v3[6:0] constant:d5[20:16]
+    | "vcst.t {vd}, {constant}"
+
+vcmp_q op=0x1b [25:23]=0x0 [15]=0x1 [7:4]=0x8 cond:vcond[3:0] vs:vpq[14:8] vt:vpq[22:16]
+    | "vcmp.q {cond}, {vs}, {vt}"
+
+vcst_q op=0x34 [25:21]=0x3 [15:7]=0x101 vd:vpq[6:0] constant:d5[20:16]
+    | "vcst.q {vd}, {constant}"
+
+vtfm2_p op=0x3c [25:23]=0x1 [15]=0x0 [7]=0x1 vd:vpq[6:0] vs:mpq[14:8] vt:vpq[22:16]
+    | "vtfm2.p {vd}, {vs}, {vt}"
+
+vhtfm2_p op=0x3c [25:23]=0x1 [15]=0x0 [7]=0x0 vd:vpq[6:0] vs:mpq[14:8] vt:vpq[22:16]
+    | "vhtfm2.p {vd}, {vs}, {vt}"
+
+vtfm3_t op=0x3c [25:23]=0x2 [15]=0x1 [7]=0x0 vd:v3[6:0] vs:m3[14:8] vt:v3[22:16]
+    | "vtfm3.t {vd}, {vs}, {vt}"
+
+vhtfm3_t op=0x3c [25:23]=0x2 [15]=0x0 [7]=0x1 vd:v3[6:0] vs:m3[14:8] vt:v3[22:16]
+    | "vhtfm3.t {vd}, {vs}, {vt}"
+
+vtfm4_q op=0x3c [25:23]=0x3 [15]=0x1 [7]=0x1 vd:vpq[6:0] vs:mpq[14:8] vt:vpq[22:16]
+    | "vtfm4.q {vd}, {vs}, {vt}"
+
+vhtfm4_q op=0x3c [25:23]=0x3 [15]=0x1 [7]=0x0 vd:vpq[6:0] vs:mpq[14:8] vt:vpq[22:16]
+    | "vhtfm4.q {vd}, {vs}, {vt}"
+
+# VFPU transfers, memory, branches and immediate control.
+
+bvf op=0x12 [25:21]=0x8 [17:16]=0x0 vcc:d3[20:18] offset:branch[15:0]
+    | "bvf {vcc}, {offset}"
+
+bvt op=0x12 [25:21]=0x8 [17:16]=0x1 vcc:d3[20:18] offset:branch[15:0]
+    | "bvt {vcc}, {offset}"
+
+bvfl op=0x12 [25:21]=0x8 [17:16]=0x2 vcc:d3[20:18] offset:branch[15:0]
+    | "bvfl {vcc}, {offset}"
+
+bvtl op=0x12 [25:21]=0x8 [17:16]=0x3 vcc:d3[20:18] offset:branch[15:0]
+    | "bvtl {vcc}, {offset}"
+
+mfv op=0x12 [25:21]=0x3 [15:7]=0x0 rt:gpr[20:16] vd:v1[6:0]
+    | "mfv {rt}, {vd}"
+
+mfvc op=0x12 [25:21]=0x3 [15:7]=0x1 rt:gpr[20:16] index:d7[6:0]
+    ctrl:vcontrol = index + 128
+    | "mfvc {rt}, {ctrl}"
+
+mtv op=0x12 [25:21]=0x7 [15:7]=0x0 rt:gpr[20:16] vd:v1[6:0]
+    | "mtv {rt}, {vd}"
+
+mtvc op=0x12 [25:21]=0x7 [15:7]=0x1 rt:gpr[20:16] index:d7[6:0]
+    ctrl:vcontrol = index + 128
+    | "mtvc {rt}, {ctrl}"
+
+vmfvc op=0x34 [25:16]=0x50 [7]=0x0 vd:v1[6:0] control:vcontrol[15:8]
+    | "vmfvc {vd}, {control}"
+
+vmtvc op=0x34 [25:15]=0xa2 dst_control:vcontrol[7:0] vs:v1[14:8]
+    | "vmtvc {dst_control}, {vs}"
+
+lv_s op=0x32 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_high:d2[1:0]
+    vt_s:v1 = ((vt_high << 5) | vt_low)
+    | "lv.s {vt_s}, {vdisp}({base})"
+
+sv_s op=0x3a base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_high:d2[1:0]
+    vt_s:v1 = ((vt_high << 5) | vt_low)
+    | "sv.s {vt_s}, {vdisp}({base})"
+
+lv_q op=0x36 [1]=0x0 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_hi:d1[0]
+    vt_q:vpq = ((vt_hi << 5) | vt_low)
+    | "lv.q {vt_q}, {vdisp}({base})"
+
+sv_q op=0x3e [1]=0x0 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_hi:d1[0]
+    vt_q:vpq = ((vt_hi << 5) | vt_low)
+    | "sv.q {vt_q}, {vdisp}({base})"
+
+vwb_q op=0x3e [1]=0x1 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_hi:d1[0]
+    vt_q:vpq = ((vt_hi << 5) | vt_low)
+    | "vwb.q {vt_q}, {vdisp}({base})"
+
+lvl_q op=0x35 [1]=0x0 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_hi:d1[0]
+    vt_q:vpq = ((vt_hi << 5) | vt_low)
+    | "lvl.q {vt_q}, {vdisp}({base})"
+
+lvr_q op=0x35 [1]=0x1 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_hi:d1[0]
+    vt_q:vpq = ((vt_hi << 5) | vt_low)
+    | "lvr.q {vt_q}, {vdisp}({base})"
+
+svl_q op=0x3d [1]=0x0 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_hi:d1[0]
+    vt_q:vpq = ((vt_hi << 5) | vt_low)
+    | "svl.q {vt_q}, {vdisp}({base})"
+
+svr_q op=0x3d [1]=0x1 base:gpr[25:21] vdisp:vdisp14[15:2] vt_low:d5[20:16] vt_hi:d1[0]
+    vt_q:vpq = ((vt_hi << 5) | vt_low)
+    | "svr.q {vt_q}, {vdisp}({base})"
+
+viim_s op=0x37 [25:23]=0x6 vt:v1[22:16] imm16:simm16[15:0]
+    | "viim.s {vt}, {imm16}"
+
+vfim_s op=0x37 [25:23]=0x7 vt:v1[22:16] uimm:uimm16[15:0]
+    | "vfim.s {vt}, {uimm}"
+
+vpfxs op=0x37 [25:24]=0x0 imm24:x24[23:0]
+    | "vpfxs {imm24}"
+
+vpfxt op=0x37 [25:24]=0x1 imm24:x24[23:0]
+    | "vpfxt {imm24}"
+
+vpfxd op=0x37 [25:24]=0x2 imm24:x24[23:0]
+    | "vpfxd {imm24}"
+
+vnop op=0x3f [25:0]=0x3ff0000
+    | "vnop"
+
+vsync op=0x3f [25:0]=0x3ff0320
+    | "vsync"
+
+vflush op=0x3f [25:0]=0x3ff040d
+    | "vflush"
+
+vsync_imm op=0x3f [25:16]=0x3ff sync_imm:uimm16[15:0]
+    | "vsync {sync_imm}"
+
+dispatch shift { sll, srl, rotr, sra, sllv, srlv, rotrv, srav }
+dispatch arith {
+    add, addu, sub, subu, slt, sltu, max, min, movz, movn, clz, clo, addi, addiu, slti, sltiu
+}
+dispatch logic { and, or, xor, nor, andi, ori, xori, lui }
+dispatch muldiv { mult, multu, div, divu, madd, maddu, msub, msubu, mfhi, mthi, mflo, mtlo }
+dispatch branch {
+    jr, jalr, j, jal, beq, bne, blez, bgtz, beql, bnel, blezl, bgtzl, bltz, bgez, bltzl, bgezl,
+    bltzal, bgezal, bltzall, bgezall
+}
+dispatch system { syscall, break, sync, cache, mfc0, mtc0, eret }
+dispatch load_store { lb, lh, lwl, lw, lbu, lhu, lwr, sb, sh, swl, sw, swr, ll, sc }
+dispatch bitfield { ext, ins, seb, seh, wsbh, wsbw, bitrev }
+dispatch fpu {
+    mfc1, mtc1, cfc1, ctc1, bc1f, bc1t, bc1fl, bc1tl, add_s, sub_s, mul_s, div_s, sqrt_s, abs_s,
+    mov_s, neg_s, round_w_s, trunc_w_s, ceil_w_s, floor_w_s, cvt_w_s, cvt_s_w, c_f_s, c_un_s, c_eq_s,
+    c_ueq_s, c_olt_s, c_ult_s, c_ole_s, c_ule_s, c_sf_s, c_ngle_s, c_seq_s, c_ngl_s, c_lt_s, c_nge_s,
+    c_le_s, c_ngt_s, lwc1, swc1
+}
+dispatch psp_debug { halt, dret, dbreak, cfc0, ctc0, mfic, mtic, mfdr, mtdr }
+dispatch vfpu_alu {
+    vadd_s, vadd_p, vadd_t, vadd_q, vsub_s, vsub_p, vsub_t, vsub_q, vsbn_s, vdiv_s, vdiv_p, vdiv_t,
+    vdiv_q, vmul_s, vmul_p, vmul_t, vmul_q, vdot_p, vdot_t, vdot_q, vscl_p, vscl_t, vscl_q, vhdp_p,
+    vhdp_t, vhdp_q, vcrs_t, vdet_p, vmin_s, vmin_p, vmin_t, vmin_q, vmax_s, vmax_p, vmax_t, vmax_q,
+    vscmp_s, vscmp_p, vscmp_t, vscmp_q, vsge_s, vsge_p, vsge_t, vsge_q, vslt_s, vslt_p, vslt_t,
+    vslt_q, vmmul_p, vmmul_t, vmmul_q, vmscl_p, vmscl_t, vmscl_q, vcrsp_t, vqmul_q, vmov_s, vmov_p,
+    vmov_t, vmov_q, vabs_s, vabs_p, vabs_t, vabs_q, vneg_s, vneg_p, vneg_t, vneg_q, vsat0_s, vsat0_p,
+    vsat0_t, vsat0_q, vsat1_s, vsat1_p, vsat1_t, vsat1_q, vrcp_s, vrcp_p, vrcp_t, vrcp_q, vrsq_s,
+    vrsq_p, vrsq_t, vrsq_q, vsin_s, vsin_p, vsin_t, vsin_q, vcos_s, vcos_p, vcos_t, vcos_q, vexp2_s,
+    vexp2_p, vexp2_t, vexp2_q, vlog2_s, vlog2_p, vlog2_t, vlog2_q, vsqrt_s, vsqrt_p, vsqrt_t,
+    vsqrt_q, vasin_s, vasin_p, vasin_t, vasin_q, vnrcp_s, vnrcp_p, vnrcp_t, vnrcp_q, vnsin_s,
+    vnsin_p, vnsin_t, vnsin_q, vrexp2_s, vrexp2_p, vrexp2_t, vrexp2_q, vsbz_s, vlgb_s, vuc2ifs_s,
+    vc2i_s, vi2uc_q, vi2c_q, vsrt1_q, vsrt2_q, vbfy1_p, vbfy1_q, vbfy2_q, vocp_s, vocp_p, vocp_t,
+    vocp_q, vfad_p, vfad_t, vfad_q, vavg_p, vavg_t, vavg_q, vsrt3_q, vsrt4_q, vsgn_s, vsgn_p, vsgn_t,
+    vsgn_q, vt4444_q, vt5551_q, vt5650_q, vf2h_p, vf2h_q, vh2f_s, vh2f_p, vus2i_s, vus2i_p, vs2i_s,
+    vs2i_p, vi2us_p, vi2us_q, vi2s_p, vi2s_q, vsocp_s, vsocp_p, vidt_p, vidt_q, vzero_s, vzero_p,
+    vzero_t, vzero_q, vone_s, vone_p, vone_t, vone_q, vrndi_s, vrndi_p, vrndi_t, vrndi_q, vrndf1_s,
+    vrndf1_p, vrndf1_t, vrndf1_q, vrndf2_s, vrndf2_p, vrndf2_t, vrndf2_q, vmidt_p, vmidt_t, vmidt_q,
+    vmzero_p, vmzero_t, vmzero_q, vmone_p, vmone_t, vmone_q, vrnds_s, vmmov_p, vmmov_t, vmmov_q,
+    vf2in_s, vf2in_p, vf2in_t, vf2in_q, vf2iz_s, vf2iz_p, vf2iz_t, vf2iz_q, vf2iu_s, vf2iu_p,
+    vf2iu_t, vf2iu_q, vf2id_s, vf2id_p, vf2id_t, vf2id_q, vi2f_s, vi2f_p, vi2f_t, vi2f_q, vwbn_s,
+    vrot_p, vrot_t, vrot_q, vcmovt_s, vcmovt_p, vcmovt_t, vcmovt_q, vcmovf_s, vcmovf_p, vcmovf_t,
+    vcmovf_q, vcmp_s, vcst_s, vcmp_p, vcst_p, vcmp_t, vcst_t, vcmp_q, vcst_q, vtfm2_p, vhtfm2_p,
+    vtfm3_t, vhtfm3_t, vtfm4_q, vhtfm4_q
+}
+dispatch vfpu_misc {
+    bvf, bvt, bvfl, bvtl, mfv, mfvc, mtv, mtvc, vmfvc, vmtvc, lv_s, sv_s, lv_q, sv_q, vwb_q, lvl_q,
+    lvr_q, svl_q, svr_q, viim_s, vfim_s, vpfxs, vpfxt, vpfxd, vnop, vsync, vflush, vsync_imm
+}
