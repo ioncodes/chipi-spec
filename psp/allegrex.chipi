@@ -1454,7 +1454,7 @@ dispatch branch {
     jr, jalr, j, jal, beq, bne, blez, bgtz, beql, bnel, blezl, bgtzl, bltz, bgez, bltzl, bgezl,
     bltzal, bgezal, bltzall, bgezall
 }
-dispatch system { syscall, break, sync, cache, mfc0, mtc0, eret }
+dispatch system { syscall, break, sync, cache, halt, mfc0, mtc0, cfc0, ctc0, eret, mfic, mtic }
 dispatch load_store { lb, lh, lwl, lw, lbu, lhu, lwr, sb, sh, swl, sw, swr, ll, sc }
 dispatch bitfield { ext, ins, seb, seh, wsbh, wsbw, bitrev }
 dispatch fpu {
@@ -1463,7 +1463,7 @@ dispatch fpu {
     c_ueq_s, c_olt_s, c_ult_s, c_ole_s, c_ule_s, c_sf_s, c_ngle_s, c_seq_s, c_ngl_s, c_lt_s, c_nge_s,
     c_le_s, c_ngt_s, lwc1, swc1
 }
-dispatch psp_debug { halt, dret, dbreak, cfc0, ctc0, mfic, mtic, mfdr, mtdr }
+dispatch debug { dret, dbreak, mfdr, mtdr }
 dispatch vfpu_alu {
     vadd_s, vadd_p, vadd_t, vadd_q, vsub_s, vsub_p, vsub_t, vsub_q, vsbn_s, vdiv_s, vdiv_p, vdiv_t,
     vdiv_q, vmul_s, vmul_p, vmul_t, vmul_q, vdot_p, vdot_t, vdot_q, vscl_p, vscl_t, vscl_q, vhdp_p,
